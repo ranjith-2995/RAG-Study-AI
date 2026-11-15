@@ -1,0 +1,26 @@
+{
+  "documents": {
+    "72942a0e-b8f8-488b-9013-e0400ab1f077": {
+      "id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "saved_filename": "72942a0e-b8f8-488b-9013-e0400ab1f077_eye_power_detection_project_report.pdf",
+      "file_path": "C:\\Users\\ranjith\\Desktop\\RAG project\\backend\\uploads\\files\\72942a0e-b8f8-488b-9013-e0400ab1f077_eye_power_detection_project_report.pdf",
+      "upload_time": "2026-11-14T16:46:00.104311",
+      "total_pages": 12,
+      "total_chunks": 35,
+      "file_size_kb": 768.92,
+      "status": "ready"
+    },
+    "0e2e98c0-ee67-4715-b575-708a0cf9c5ce": {
+      "id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "saved_filename": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_UNIT_1_Complete_Notes.pdf",
+      "file_path": "C:\\Users\\ranjith\\Desktop\\RAG project\\backend\\uploads\\files\\0e2e98c0-ee67-4715-b575-708a0cf9c5ce_UNIT_1_Complete_Notes.pdf",
+      "upload_time": "2026-11-14T18:26:43.047856",
+      "total_pages": 38,
+      "total_chunks": 93,
+      "file_size_kb": 342.45,
+      "status": "ready"
+    }
+  }
+}

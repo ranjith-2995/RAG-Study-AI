@@ -1,0 +1,1282 @@
+[
+  {
+    "text": "Software-Based Eye Power (Refractive\nError)\nDetection Using Camera Distance\nMeasurement\nFinal Year B.Tech Project — Detailed Technical Report\nTwo-Phase System: Webcam Far-Point Method + Smartphone Eccentric\nPhotorefraction\nPrepared as a technical reference document — covers system design, tech stack,\nalgorithms, formulas, architecture diagrams and validation plan.",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p1_c0",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 1,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "Table of Contents\n1. Abstract\n2. Problem Statement & Motivation\n3. Project Objectives\n4. Feasibility & Related Work\n5. System Architecture Overview\n6. Technology Stack\n7. Phase 1 — Webcam Far-Point Method (Detailed Working)\n8. Phase 2 — Smartphone Eccentric Photorefraction (Detailed Working)\n9. Core Formulas & Algorithms\n10. Module-Wise Breakdown\n11. Database Design\n12. Testing & Validation Plan\n13. Limitations & Scope Boundaries\n14. Future Enhancements\n15. References",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p2_c0",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 2,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "1. Abstract\nThis project builds a software system that estimates a person's eye refractive power (commonly called\n\"eye power\" or spectacle prescription) without any specialized optometry hardware, using only a laptop\nwebcam and, optionally, a smartphone camera with flash. The core idea is optical: a nearsighted\n(myopic) eye has a fixed maximum distance — the far point — beyond which it cannot focus clearly.\nBy using computer vision to measure how far a person is standing from the screen at the exact moment\na test symbol becomes unreadable, the system estimates the eye's power in diopters using a\nwell-established optical formula. A second, more advanced module uses the phone's camera flash to",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p3_c0",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 3,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "well-established optical formula. A second, more advanced module uses the phone's camera flash to\nanalyze the reflex pattern inside the pupil (eccentric photorefraction) to classify the type and rough\nseverity of the refractive error. This approach is not a theoretical idea — clinically validated smartphone\napps built on the same principle have shown strong correlation with real optometrist measurements,\nwhich makes this a credible, scoped, and achievable final-year project.\n2. Problem Statement & Motivation\nAccess to basic eye check-ups is limited in many semi-urban and rural areas due to the cost and\navailability of optometrists and autorefractor machines. Many people — especially students and",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p3_c1",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 3,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "availability of optometrists and autorefractor machines. Many people — especially students and\nchildren — go undiagnosed for years with mild-to-moderate refractive errors, which affects academic\nperformance and daily life. A low-cost, software-only screening tool that runs on devices people already\nown (a laptop or a smartphone) can act as a first-level screening layer: it will not replace a clinical eye\nexam, but it can flag people who likely need one, long before they would otherwise get checked.\nWhy this is solvable with software\n\nRefractive error has a direct, known optical relationship with a measurable physical quantity:\ndistance.\n\nFace and eye landmark detection is a solved, well-supported problem (MediaPipe, OpenCV) that\nruns in real time on a normal laptop.\n",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p3_c2",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 3,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": "distance.\n\nFace and eye landmark detection is a solved, well-supported problem (MediaPipe, OpenCV) that\nruns in real time on a normal laptop.\n\nCamera-based distance estimation using interpupillary distance (IPD) as a reference is a standard,\nwell-documented computer vision technique.\n\nPublished clinical research already validates this exact approach (see Section 4), so the project is\ngrounded, not speculative.\n3. Project Objectives\n1\nBuild a real-time webcam application that tracks the user's eyes and calculates live distance from\nthe screen.\n2\nDisplay a correctly-scaled visual acuity test (Tumbling E chart) that adjusts size as the user moves.\n3\nDetect the user's far point — the distance at which the test symbol becomes unreadable — and",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p3_c3",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 3,
+      "chunk_index": 3
+    }
+  },
+  {
+    "text": "3\nDetect the user's far point — the distance at which the test symbol becomes unreadable — and\nconvert it into an estimated refractive power using the standard optics formula.\n4\nBuild a secondary smartphone-based module that uses flash photography to classify myopia vs.\nhyperopia and estimate rough severity using eccentric photorefraction.",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p3_c4",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 3,
+      "chunk_index": 4
+    }
+  },
+  {
+    "text": "5\nValidate the system's output against the known glasses prescription of real test subjects and report\naccuracy (average error in diopters, correlation).\n6\nPackage the result as a simple screening report clearly stating it is not a diagnostic replacement for\na clinical eye exam.\n4. Feasibility & Related Work\nThis project is feasible because near-identical systems already exist in published, peer-reviewed and\nclinically tested form:\n4.1 Smartphone far-point apps (Schepens Eye Research Institute, Harvard)\nA smartphone app built on exactly this principle — measuring the distance at which small optotypes\n(Tumbling E letters and grating patterns) become unreadable — was tested clinically across 201 eyes",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p4_c0",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 4,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "(Tumbling E letters and grating patterns) become unreadable — was tested clinically across 201 eyes\nwith spherical equivalent power ranging from 0 to −10.2 D. App results correlated strongly with clinical\nautorefractor measurements (Pearson R = 0.91), with average error of about 0.63 D for spherical power\nand 0.28 D for astigmatism. This confirms the far-point method is accurate enough to be a legitimate\nscreening tool, not just a rough guess.\n4.2 Eccentric photorefraction (GoCheckKids and academic research)\nGoCheckKids is an FDA-cleared device (Class IIe) that uses a phone's ordinary camera and flash,\nconfigured for eccentric photorefraction, validated against standard clinical cycloplegic refraction in",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p4_c1",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 4,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "configured for eccentric photorefraction, validated against standard clinical cycloplegic refraction in\nchildren. More recent academic work applies deep learning directly to these flash-reflex images to\nestimate power automatically, confirming this is an active, credible research direction.\n4.3 Key takeaway for scoping\n\nPhase 1 (far-point method) is the well-validated, achievable core — build and test this first.\n\nPhase 2 (photorefraction) is a strong stretch goal that differentiates the project, but should be\nscoped honestly as classification (myopic / hyperopic / roughly normal + severity bucket) rather than\nan exact diopter output.\n\nBoth phases require empirical calibration using real test subjects — this is standard practice even in\ncommercial tools, not a shortcut.",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p4_c2",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 4,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": "\nBoth phases require empirical calibration using real test subjects — this is standard practice even in\ncommercial tools, not a shortcut.\n5. System Architecture Overview\nThe system is structured in five logical layers, moving from raw hardware capture up to the final report\nshown to the user. Phase 1 and Phase 2 run as independent modules that feed into a shared\ncalibration and reporting engine, so either phase can be built, tested, and demonstrated on its own.",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p4_c3",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 4,
+      "chunk_index": 3
+    }
+  },
+  {
+    "text": "Figure 5.1 — Overall two-phase system architecture, from capture hardware to final report.\n6. Technology Stack\nThe stack is chosen to be entirely free, open-source, and runnable on a normal student laptop, with the\nsmartphone module needing only a browser or a lightweight companion app.\nFigure 6.1 — Layered technology stack for the system.\n6.1 Recommended stack in detail",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p5_c0",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 5,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "Layer\nTechnology\nPurpose\nFrontend / UI\nReact.js (or plain HTML5 + Canvas/JS)\nDisplays optotype chart, live distance readout, capture controls, and final report\nBackend / API\nPython + Flask or FastAPI\nServes the CV pipeline as REST endpoints, manages test sessions\nComputer Vision\nOpenCV, MediaPipe Face Mesh\nFace & eye landmark detection, IPD measurement, pupil/crescent detection\nNumerical / Fitting\nNumPy, SciPy, scikit-learn\nCalibration curve fitting (pixel-to-distance, crescent-ratio-to-power regression)\nData Storage\nSQLite (dev) / MongoDB (if scaling)\nStores calibration constants, session data, test-subject validation dataset\nPhase 2 Capture\nSmartphone camera + flash (native or PWA)\nCaptures flash-reflex images for eccentric photorefraction\nVisualization\nMatplotlib / Chart.js",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p6_c0",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 6,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "Smartphone camera + flash (native or PWA)\nCaptures flash-reflex images for eccentric photorefraction\nVisualization\nMatplotlib / Chart.js\nPlots calibration curves and accuracy graphs for the project report\nVersion Control\nGit + GitHub\nSource control and project submission\n6.2 Why this stack\n\nOpenCV + MediaPipe together give sub-pixel-accurate eye landmarks in real time on CPU alone —\nno GPU or paid API needed.\n\nFlask/FastAPI is lightweight enough to demo locally during your viva without deployment overhead.\n\nSQLite requires zero setup, which is ideal for a project with a small, fixed validation dataset (15–20\ntest subjects).\n\nEvery tool in this stack is free and has strong documentation — critical for solo, time-boxed\ndevelopment.\n7. Phase 1 — Webcam Far-Point Method (Detailed Working)",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p6_c1",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 6,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "development.\n7. Phase 1 — Webcam Far-Point Method (Detailed Working)\nThis is the primary, must-complete module. It works entirely on a laptop webcam and does not need\nany special hardware.",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p6_c2",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 6,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": "Figure 7.1 — Step-by-step processing flow for the webcam far-point method.\n7.1 Distance measurement — how it actually works\nThe system uses the Inter-Pupillary Distance (IPD) — the distance between the centers of the two\npupils — as its reference measurement. Average adult IPD is fairly consistent (roughly 54–68 mm),\nwhich makes it usable as a scale reference once the camera is calibrated. The underlying relationship\nis the standard pinhole camera model:\ndistance = (real IPD × focal length) / (IPD in pixels)\nThe focal length constant is calibrated once per camera: ask the user to sit at a known distance (e.g.,\n50 cm, measured with a tape/ruler) and record the IPD in pixels at that distance. That single reference",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p7_c0",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 7,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "50 cm, measured with a tape/ruler) and record the IPD in pixels at that distance. That single reference\npoint lets the system compute real-world distance continuously afterward, frame by frame, without\nneeding the user to do anything special.\n7.2 The optotype (Tumbling E) test\nA Tumbling E is a capital letter \"E\" rotated in one of four directions (up, down, left, right). It is preferred\nover normal alphabet charts because it does not require literacy or letter recognition — the user only\nhas to identify which direction the \"prongs\" point, which keeps the test language-independent and\nreduces guessing bias. The system displays the E at a size that is mathematically scaled to the user's\nlive distance from the screen, so that the visual angle it subtends stays equivalent to a real eye-chart",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p7_c1",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 7,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "live distance from the screen, so that the visual angle it subtends stays equivalent to a real eye-chart\nline at that distance.\n7.3 Finding the far point\nThe user starts close to the screen (where the letter is easily readable) and slowly moves backward.\nThe system continuously re-scales the optotype to keep the effective test difficulty constant relative to\ndistance. The user presses a key or gives a voice response each time they correctly identify the\ndirection. The point where the user can no longer reliably identify the direction — confirmed with a\ncouple of repeat attempts to rule out random guessing — is recorded as the far point (F), in meters.",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p7_c2",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 7,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": "7.4 From far point to power\nA myopic eye's far point is inversely related to its refractive power. Once F is known, the estimated\nspherical power is computed directly:\nPower (D) ≈ −1 / F (in meters)\nExample: if a user's letters become unreadable beyond 25 cm (0.25 m), the estimated power is\napproximately −1 / 0.25 = −4.00 D. The test should be repeated 3 times and averaged to reduce noise\nfrom user reaction time and detection jitter.\n7.5 Important constraint\nThis formula only works cleanly for myopia (nearsightedness), because a myopic eye has a genuine,\nfixed far point. Hyperopia (farsightedness) does not have a comparable far point in the same way, so\nPhase 1 should be scoped honestly as a myopia-focused screening test, with a note in the report that a",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p8_c0",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 8,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "Phase 1 should be scoped honestly as a myopia-focused screening test, with a note in the report that a\nseparate near-point/accommodation-based test would be required to screen for hyperopia.\n8. Phase 2 — Smartphone Eccentric Photorefraction (Detailed\nWorking)\nThis is the stretch/differentiator module. It uses the phone's camera and flash together, exploiting a\nwell-known optical phenomenon called the red-reflex / crescent effect.\nFigure 8.1 — Step-by-step processing flow for the phone-based photorefraction method.\n8.1 The underlying optical principle\nA phone's flash sits slightly off-center from its camera lens. When a person looks directly at the camera\nwhile the flash fires, light bounces off the retina and returns toward the camera — but only the part of",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p8_c1",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 8,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "while the flash fires, light bounces off the retina and returns toward the camera — but only the part of\nthe pupil that is sufficiently out of focus lets that light escape back out, creating a bright",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p8_c2",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 8,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": "crescent-shaped glow within the pupil in the photo. Critically:\n\nIf the crescent appears on the same side as the flash → the eye is myopic (nearsighted).\n\nIf the crescent appears on the opposite side from the flash → the eye is hyperopic (farsighted).\nThis alone gives a myopia-vs-hyperopia classification without any heavy computation, using basic\nOpenCV image processing (pupil detection + thresholding + side-of-crescent check).\n8.2 Estimating severity\nFor rough magnitude, the system measures the crescent's width and the pupil's diameter in the\ncaptured image and computes their ratio:\nCrescent-to-Pupil Ratio = crescent width / pupil diameter\nThis ratio is a standard feature used in photorefraction research and tracks refractive error reasonably",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p9_c0",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 9,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "This ratio is a standard feature used in photorefraction research and tracks refractive error reasonably\nwell up to roughly ±4.00 D. Beyond that range the crescent shape becomes more circular and loses its\nability to distinguish magnitude — this should be documented as a known limitation, not treated as a\nbug.\n8.3 Calibration, not pure theory\nEven professional/commercial photorefraction tools do not derive power from a clean formula — they\ncalibrate empirically against measured data. The project should follow the same approach: collect\ncrescent-ratio measurements from volunteers alongside their known prescriptions, then fit a regression\ncurve (e.g., using scikit-learn or SciPy) mapping ratio → estimated power, rather than trying to derive\nthe mapping from optics alone.",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p9_c1",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 9,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "curve (e.g., using scikit-learn or SciPy) mapping ratio → estimated power, rather than trying to derive\nthe mapping from optics alone.\n8.4 Astigmatism cue (optional extension)\nNo extra hardware is needed: capture one flash image with the phone held normally, and a second with\nthe phone rotated 90 degrees. Comparing the crescent widths between the two orientations gives a\nbasic signal for astigmatism, since astigmatic eyes focus differently along different meridians.\n8.5 Practical build notes\n\nDim ambient lighting helps — dilated pupils give a larger, clearer crescent to measure.\n\nFix the phone on a small stand at a consistent distance rather than holding it by hand, so calibration\nstays valid across sessions.\n",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p9_c2",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 9,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": "\nFix the phone on a small stand at a consistent distance rather than holding it by hand, so calibration\nstays valid across sessions.\n\nScope Phase 2 honestly as classification + severity bucket (e.g., \"mild / moderate / high\"), not an\nexact diopter value — this is realistic for a semester timeline and still a strong, demo-worthy result.\n9. Core Formulas & Algorithms\nPurpose\nFormula / Method\nDistance from IPD (pinhole camera model)\ndistance = (real IPD × focal length) / (IPD in pixels)\nRefractive power from far point\nPower (D) ≈ −1 / F(meters)\nCrescent-to-pupil ratio (Phase 2)\nratio = crescent width / pupil diameter",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p9_c3",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 9,
+      "chunk_index": 3
+    }
+  },
+  {
+    "text": "Purpose\nFormula / Method\nCalibration curve fitting\nLinear/polynomial regression: known power = f(ratio), fit via least squares\nAccuracy metric for validation\nMean Absolute Error (D) and Pearson correlation vs. known prescriptions\nSuggested algorithm summary for Phase 1\n1\nCapture frame → run MediaPipe Face Mesh → get eye landmark coordinates.\n2\nCompute pixel IPD from the two eye-center landmarks.\n3\nConvert to real distance using the calibrated pinhole formula.\n4\nRe-render the Tumbling E at the size corresponding to the required visual angle at that distance.\n5\nLog user responses per distance step; detect the transition point from correct to incorrect\nresponses.\n6\nAverage across repeated trials to get final far point F.\n7",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p10_c0",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 10,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "responses.\n6\nAverage across repeated trials to get final far point F.\n7\nApply Power ≈ −1/F, round to nearest clinically meaningful step (0.25 D), and display result.\n10. Module-Wise Breakdown\nModule\nResponsibility\nKey Libraries\nCapture Module\nAccess webcam/phone camera stream\nOpenCV VideoCapture, WebRTC (browser)\nLandmark Detection Module\nDetect face, eyes, pupils in each frame\nMediaPipe Face Mesh, OpenCV\nDistance Estimation Module\nConvert pixel IPD to real-world distance\nNumPy, calibration constants\nOptotype Rendering Module\nDraw correctly-scaled Tumbling E on screen\nHTML5 Canvas / React / Pygame\nResponse Capture Module\nRecord user's direction responses per trial\nJS event handlers / keyboard input\nPhotorefraction Module\nDetect crescent, compute ratio, classify type\nOpenCV, NumPy",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p10_c1",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 10,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "JS event handlers / keyboard input\nPhotorefraction Module\nDetect crescent, compute ratio, classify type\nOpenCV, NumPy\nCalibration & Regression Module\nFit ratio→power and pixel→distance curves\nSciPy, scikit-learn\nReporting Module\nGenerate final screening report/dashboard\nFlask templates / React / ReportLab\nData Layer\nPersist sessions, calibration data, test dataset\nSQLite / MongoDB\n11. Database Design (Suggested Schema)\nA lightweight relational schema is enough for this project's scope:\nTable\nKey Fields\nusers\nuser_id, name, age, known_prescription (optional, for validation)\nsessions\nsession_id, user_id, phase (1 or 2), timestamp, device_used\nphase1_trials\ntrial_id, session_id, distance_m, optotype_direction, correct (bool)",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p10_c2",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 10,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": "Table\nKey Fields\nphase1_results\nsession_id, far_point_m, estimated_power_D\nphase2_captures\ncapture_id, session_id, image_path, crescent_side, crescent_width_px, pupil_diameter_px\nphase2_results\nsession_id, classification (myopia/hyperopia/normal), severity_bucket\ncalibration\ncamera_id, focal_length_constant, reference_distance_m, reference_ipd_px\n12. Testing & Validation Plan\nThe strongest part of your final report will be real accuracy numbers, not just a working demo. Follow\nthe same validation approach used in the published research referenced in Section 4:\n1\nRecruit 15–20 test subjects with a known, existing glasses/contact lens prescription (classmates,\nfamily, faculty).\n2\nFor each subject, run Phase 1 three times and record the average estimated power.\n3",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p11_c0",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 11,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "family, faculty).\n2\nFor each subject, run Phase 1 three times and record the average estimated power.\n3\nIf building Phase 2, also capture flash images and record classification + severity bucket.\n4\nCompare estimated results against each subject's real prescription.\n5\nReport Mean Absolute Error (in diopters) and Pearson correlation coefficient between estimated\nand actual power.\n6\nPlot a scatter graph of estimated vs. actual power with a best-fit line — this single graph is often the\nmost convincing figure in a final-year evaluation.\n7\nDocument edge cases: subjects with very high power, astigmatism-only prescriptions, or poor\nlighting conditions.\n13. Limitations & Scope Boundaries\nStating limitations clearly and early in your report is a strength, not a weakness — it shows the",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p11_c1",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 11,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "13. Limitations & Scope Boundaries\nStating limitations clearly and early in your report is a strength, not a weakness — it shows the\nevaluators you understand exactly where real clinical autorefractors still outperform your system.\n\nThis is a screening/estimation tool, not a diagnostic replacement for a comprehensive eye exam.\n\nPhase 1's formula works cleanly only for myopia; hyperopia needs a separate near-point-based\ntest.\n\nPhase 2's crescent-ratio method loses magnitude accuracy beyond roughly ±4.00 D.\n\nAstigmatism axis (the precise angle of astigmatism) is not measurable with this setup — only a\nrough presence/absence cue.\n\nResults depend on consistent lighting, camera quality, and honest user responses during the test.\n",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p11_c2",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 11,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": "rough presence/absence cue.\n\nResults depend on consistent lighting, camera quality, and honest user responses during the test.\n\nThe system does not detect pathological eye conditions (cataracts, retinal disease, etc.).\n14. Future Enhancements",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p11_c3",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 11,
+      "chunk_index": 3
+    }
+  },
+  {
+    "text": "\nDeep learning-based photorefraction: research such as the CNN+RNN model \"REDNet\" predicts\nfull sphere, cylinder, and spherical-equivalent power directly from multiple photorefraction images —\na strong direction for future work once a larger training dataset is available.\n\nMobile app packaging (Android/iOS) for wider real-world deployment beyond the lab/demo setting.\n\nCloud-based calibration sharing so the system improves accuracy as more validated sessions are\ncollected across devices.\n\nIntegration with a simple telemedicine referral flow for users flagged as likely needing a real eye\nexam.\n15. References\n1\nSmartphone-based visual acuity / far-point refraction validation study — Schepens Eye Research\nInstitute, Harvard Medical School (published clinical validation, PubMed-indexed).\n2",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p12_c0",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 12,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "Institute, Harvard Medical School (published clinical validation, PubMed-indexed).\n2\nGoCheckKids — FDA-cleared (Class IIe) smartphone photorefraction screening device; validated\nagainst clinical cycloplegic refraction in children.\n3\nEccentric photorefraction crescent-ratio methodology — ophthalmic imaging literature\n(ScienceDirect, ResearchGate) describing crescent width-to-pupil diameter as a refractive error\nindicator.\n4\nREDNet — CNN+RNN based deep learning model for estimating sphere, cylinder, and\nspherical-equivalent power from multi-angle photorefraction images (Springer-indexed research).\n5\nPinhole camera distance estimation model — standard computer vision technique for real-world\ndistance calculation from a calibrated reference feature width.\n6",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p12_c1",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 12,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "distance calculation from a calibrated reference feature width.\n6\nMediaPipe Face Mesh documentation — Google, for facial and eye landmark detection.\n7\nOpenCV documentation — for image processing, pupil detection, and thresholding techniques.\nNote: Exact URLs/DOIs should be added directly from your literature search when preparing the final\nsubmission and bibliography — cite each source in the format required by your college (IEEE/APA),\nand verify each reference against the original publication before submission.\nEnd of Report",
+    "metadata": {
+      "chunk_id": "72942a0e-b8f8-488b-9013-e0400ab1f077_p12_c2",
+      "doc_id": "72942a0e-b8f8-488b-9013-e0400ab1f077",
+      "filename": "eye_power_detection_project_report.pdf",
+      "page": 12,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": "UNIT 1 – INTRODUCTION TO VEHICULAR NETWORKS\nOverview of vehicular communication systems - Evolution of vehicular networks\n- Architectures and communication paradigms - Dedicated Short-Range Communication\n(DSRC) - Cellular Vehicle-to-Everything (C-V2X) - Vehicular Ad-hoc Networks (VANETs).\nLecture 1: Overview of Vehicular Communication Systems & Evolution of Vehicular\nNetworks\n1.1 Overview of Vehicular Communication Systems\nA Vehicular Communication System (VCS) is a wireless communication system that\nenables vehicles to exchange information with other vehicles, roadside infrastructure,\npedestrians, cloud servers, and communication networks. It forms the backbone of\nIntelligent Transportation Systems (ITS) and aims to improve road safety, traffic\nefficiency, and driving comfort.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p1_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 1,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "Intelligent Transportation Systems (ITS) and aims to improve road safety, traffic\nefficiency, and driving comfort.\nWith the rapid increase in the number of vehicles, urban areas are experiencing severe traffic\ncongestion, frequent accidents, longer travel times, and environmental pollution. Traditional\ntraffic management methods are no longer sufficient to address these issues. Vehicular\ncommunication systems provide an intelligent solution by enabling real-time communication\namong vehicles and transportation infrastructure.\nUnlike conventional communication systems, vehicular communication supports high-speed\nmobile nodes (vehicles), dynamic network topology, low communication latency, and rapid\ninformation dissemination. These features allow vehicles to exchange critical information",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p1_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 1,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "information dissemination. These features allow vehicles to exchange critical information\nsuch as speed, location, direction, braking status, and road conditions in real time.\nThe system uses various wireless communication technologies such as Dedicated Short-\nRange Communication (DSRC), Cellular Vehicle-to-Everything (C-V2X), Wi-Fi, LTE,\nand 5G to establish reliable communication links.\n1.2 Need for Vehicular Communication Systems\nThe increasing demand for safe and efficient transportation has created the need for\nintelligent communication among vehicles.\nThe major reasons for adopting vehicular communication systems include:\n Increasing number of road accidents\n Heavy traffic congestion in urban areas\n High fuel consumption due to traffic delays",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p1_c2",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 1,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": " Increasing number of road accidents\n Heavy traffic congestion in urban areas\n High fuel consumption due to traffic delays\n Environmental pollution caused by traffic jams\n Need for emergency response systems\n Requirement for autonomous and connected vehicles\n Smart city transportation management\nBy enabling continuous communication, vehicles can anticipate potential hazards, receive\nreal-time traffic updates, and make informed driving decisions.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p1_c3",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 1,
+      "chunk_index": 3
+    }
+  },
+  {
+    "text": "1.3 Objectives of Vehicular Communication Systems\nThe primary objectives of vehicular communication systems are:\n Improve road safety by reducing accidents.\n Enable real-time communication among vehicles.\n Reduce traffic congestion through intelligent traffic management.\n Minimize travel time using dynamic route guidance.\n Support autonomous and connected vehicles.\n Improve fuel efficiency and reduce emissions.\n Provide infotainment and Internet services to passengers.\n Enhance emergency response and disaster management.\n Integrate transportation systems with smart city infrastructure.\n1.4 Components of Vehicular Communication Systems\nA vehicular communication system consists of several interconnected components.\n1. Vehicle (On-Board Unit – OBU)",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p2_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 2,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "A vehicular communication system consists of several interconnected components.\n1. Vehicle (On-Board Unit – OBU)\nEvery connected vehicle is equipped with an On-Board Unit (OBU), which acts as the\ncommunication device. The OBU collects data from vehicle sensors and exchanges\ninformation with nearby vehicles and roadside infrastructure.\nFunctions of the OBU include:\n Wireless communication\n GPS positioning\n Processing safety messages\n Navigation support\n Internet connectivity\n2. Roadside Unit (RSU)\nRoadside Units are communication devices installed along roads, highways, and\nintersections. They communicate with passing vehicles and act as gateways to the traffic\nmanagement center.\nFunctions include:\n Broadcasting traffic information\n Receiving vehicle status information",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p2_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 2,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "management center.\nFunctions include:\n Broadcasting traffic information\n Receiving vehicle status information\n Traffic signal coordination\n Electronic toll collection\n Emergency notification\n3. Traffic Management Center (TMC)\nThe Traffic Management Center receives information from multiple roadside units and\nmonitors traffic conditions over a large geographical area.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p2_c2",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 2,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": "Functions include:\n Traffic monitoring\n Congestion control\n Accident management\n Route optimization\n Emergency coordination\n4. Cloud Server\nCloud computing provides centralized storage and processing for vehicular data.\nFunctions include:\n Big data storage\n Navigation services\n Software updates\n Artificial Intelligence applications\n Fleet management\n5. GPS Satellites\nGlobal Positioning System (GPS) satellites provide accurate vehicle location and time\nsynchronization.\nFunctions include:\n Vehicle localization\n Route planning\n Speed estimation\n Navigation assistance\n1.5 Working of Vehicular Communication Systems\nThe operation of a vehicular communication system can be explained as follows:\n1. Vehicle sensors continuously monitor parameters such as speed, location, direction,",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p3_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 3,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "1. Vehicle sensors continuously monitor parameters such as speed, location, direction,\nbraking status, and engine condition.\n2. The On-Board Unit processes the collected information.\n3. The information is transmitted wirelessly to nearby vehicles or roadside\ninfrastructure.\n4. Roadside Units forward important information to the Traffic Management Center\nthrough communication networks.\n5. The Traffic Management Center analyzes the information and sends traffic alerts,\naccident warnings, and navigation guidance to vehicles.\n6. Vehicles receive these messages and assist the driver or autonomous driving system in\nmaking safe decisions.\nThis continuous exchange of information enables real-time traffic management and accident\nprevention.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p3_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 3,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "1.6 Applications of Vehicular Communication Systems\nVehicular communication systems support numerous applications in transportation.\nSafety Applications\nSafety is the most important application of vehicular communication.\nExamples include:\n Collision avoidance\n Emergency electronic brake warning\n Blind spot detection\n Lane departure warning\n Wrong-way driving alerts\n Road hazard notification\n Emergency vehicle priority\nThese applications significantly reduce road accidents and improve driver awareness.\nTraffic Management Applications\nTraffic-related applications help improve transportation efficiency.\nExamples include:\n Intelligent traffic signal control\n Dynamic route guidance\n Traffic congestion monitoring\n Smart parking systems\n Electronic toll collection",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p4_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 4,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": " Intelligent traffic signal control\n Dynamic route guidance\n Traffic congestion monitoring\n Smart parking systems\n Electronic toll collection\n Travel time estimation\nInfotainment Applications\nVehicular communication also enhances passenger comfort through infotainment services.\nExamples include:\n Internet access\n Multimedia streaming\n Navigation services\n Online weather updates\n Location-based services\nCommercial Applications\nCommercial vehicle operators use vehicular communication for:\n Fleet management",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p4_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 4,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": " Vehicle tracking\n Logistics management\n Fuel consumption monitoring\n Remote vehicle diagnostics\n1.7 Evolution of Vehicular Networks\nThe development of vehicular communication has evolved over several decades.\nFirst Generation (1990–2000)\nThe first generation focused mainly on GPS-based navigation systems.\nCharacteristics:\n Standalone navigation\n No communication among vehicles\n Basic vehicle tracking\nApplications:\n Route guidance\n Fleet monitoring\nSecond Generation (2000–2010)\nWireless communication technologies began to emerge.\nCharacteristics:\n Introduction of IEEE 802.11\n Development of DSRC\n Initial intelligent transportation systems\nApplications:\n Traffic monitoring\n Safety messaging\nThird Generation (2010–2020)\nVehicular communication became more advanced.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p5_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 5,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "Applications:\n Traffic monitoring\n Safety messaging\nThird Generation (2010–2020)\nVehicular communication became more advanced.\nCharacteristics:\n Vehicular Ad-hoc Networks (VANETs)\n LTE communication\n Cloud computing\n Internet of Things (IoT)",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p5_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 5,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "Applications:\n Connected vehicles\n Smart parking\n Intelligent traffic management\nFourth Generation (2020–Present)\nModern vehicular communication integrates advanced technologies.\nCharacteristics:\n Cellular Vehicle-to-Everything (C-V2X)\n 5G communication\n Artificial Intelligence\n Edge Computing\n Autonomous vehicles\nApplications:\n Self-driving cars\n Vehicle platooning\n Smart cities\n Predictive traffic management\n1.8 Advantages of Vehicular Communication Systems\nVehicular communication offers several advantages:\n Improves road safety.\n Reduces accidents.\n Minimizes traffic congestion.\n Supports autonomous driving.\n Provides low-latency communication.\n Enhances navigation accuracy.\n Reduces fuel consumption.\n Lowers carbon emissions.\n Enables smart transportation systems.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p6_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 6,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": " Enhances navigation accuracy.\n Reduces fuel consumption.\n Lowers carbon emissions.\n Enables smart transportation systems.\n Improves emergency response.\n1.9 Limitations of Vehicular Communication Systems\nDespite their benefits, vehicular communication systems face several challenges:\n High deployment cost.\n Frequent network topology changes.\n Limited wireless communication range.\n Security threats and cyberattacks.\n Privacy concerns.\n Communication interference.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p6_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 6,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": " Scalability issues in dense traffic.\n Standardization among different manufacturers.\nLecture 2: Architectures of Vehicular Networks\n2.1 Introduction\nA Vehicular Network Architecture defines the structure and organization of\ncommunication among vehicles, roadside infrastructure, pedestrians, cloud servers, and\ntraffic management systems. It provides a framework that enables reliable, secure, and\nefficient information exchange to support Intelligent Transportation Systems (ITS).\nThe architecture determines how data is transmitted, processed, and shared among different\nentities in the transportation network. Since vehicles move at high speeds and frequently\nchange their locations, vehicular network architecture must support dynamic topology, low",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p7_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 7,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "change their locations, vehicular network architecture must support dynamic topology, low\nlatency, high reliability, and continuous connectivity.\nModern vehicular networks integrate wireless communication technologies such as\nDSRC (IEEE 802.11p), LTE-V2X, 5G, Wi-Fi, GPS, and Cloud Computing to achieve\nseamless communication.\n2.2 Importance of Vehicular Network Architecture\nVehicular network architecture plays a vital role in ensuring effective communication\nbetween transportation entities. It helps in:\n Reducing road accidents through real-time information sharing.\n Managing traffic congestion efficiently.\n Supporting connected and autonomous vehicles.\n Providing reliable navigation services.\n Facilitating emergency response systems.\n Enabling smart city transportation.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p7_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 7,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": " Providing reliable navigation services.\n Facilitating emergency response systems.\n Enabling smart city transportation.\nA well-designed architecture ensures that communication remains uninterrupted even when\nvehicles move at high speeds.\n2.3 Components of Vehicular Network Architecture\nThe vehicular network architecture consists of several interconnected components.\n1. Vehicle (On-Board Unit - OBU)\nEach connected vehicle is equipped with an On-Board Unit (OBU), which serves as the\nprimary communication device. The OBU collects information from various vehicle sensors,\nprocesses the data, and exchanges it with nearby vehicles and roadside infrastructure.\nThe OBU performs the following functions:\n Wireless communication with nearby vehicles.\n GPS-based positioning.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p7_c2",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 7,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": " Processing safety messages.\n Navigation assistance.\n Internet connectivity.\n Data storage and processing.\nModern OBUs integrate multiple communication technologies including DSRC, LTE, Wi-Fi,\nBluetooth, and 5G.\n2. Roadside Unit (RSU)\nA Roadside Unit (RSU) is a fixed communication device installed along highways,\nintersections, traffic signals, and parking areas.\nThe RSU acts as an intermediary between vehicles and the Traffic Management Center.\nMajor functions include:\n Broadcasting traffic information.\n Receiving vehicle status messages.\n Providing Internet access.\n Traffic signal coordination.\n Electronic toll collection.\n Accident notification.\n Emergency message dissemination.\nRSUs extend communication coverage and improve network reliability.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p8_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 8,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": " Accident notification.\n Emergency message dissemination.\nRSUs extend communication coverage and improve network reliability.\n3. Traffic Management Center (TMC)\nThe Traffic Management Center is the central control facility responsible for monitoring\ntransportation systems.\nThe TMC receives information from multiple RSUs and cloud servers to monitor overall\ntraffic conditions.\nIts major responsibilities include:\n Monitoring traffic density.\n Detecting accidents.\n Managing congestion.\n Coordinating emergency services.\n Optimizing traffic signals.\n Disseminating route guidance.\nThe TMC uses advanced data analytics and Artificial Intelligence to improve transportation\nefficiency.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p8_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 8,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "4. Cloud Server\nCloud servers provide centralized storage and processing facilities for vehicular data.\nLarge amounts of information generated by connected vehicles are uploaded to cloud servers\nfor analysis.\nFunctions include:\n Big data storage.\n Navigation support.\n Traffic prediction.\n Software updates.\n Artificial Intelligence processing.\n Fleet management.\n Vehicle diagnostics.\nCloud computing enables large-scale intelligent transportation services.\n5. GPS Satellite\nThe Global Positioning System (GPS) provides accurate location information for vehicles.\nGPS enables:\n Vehicle positioning.\n Speed estimation.\n Navigation.\n Route optimization.\n Time synchronization.\nLocation information is one of the most important inputs for vehicular communication\nsystems.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p9_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 9,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": " Route optimization.\n Time synchronization.\nLocation information is one of the most important inputs for vehicular communication\nsystems.\n2.4 Types of Vehicular Network Architecture\nDepending on the communication method, vehicular networks can be classified into three\nmajor architectures.\n1. Centralized Architecture\nIn centralized architecture, all communication passes through a central controller such as a\ncloud server or Traffic Management Center.\nVehicles first send their information to the central server, which processes the data and\ndistributes it to other vehicles.\nCharacteristics\n Central control.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p9_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 9,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": " Easy monitoring.\n Centralized decision making.\n Efficient resource management.\nAdvantages\n Easy maintenance.\n Better traffic monitoring.\n Centralized security management.\n Efficient data storage.\nDisadvantages\n Single point of failure.\n High communication delay.\n Network congestion.\n Scalability limitations.\nCentralized architecture is mainly used for cloud-based traffic management applications.\n2. Decentralized Architecture\nIn decentralized architecture, vehicles communicate directly with one another without\ndepending on a central controller.\nEach vehicle acts as both a communication source and relay node.\nCharacteristics\n Self-organizing network.\n No centralized control.\n Dynamic communication.\n Direct information exchange.\nAdvantages\n Low communication delay.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p10_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 10,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": " Self-organizing network.\n No centralized control.\n Dynamic communication.\n Direct information exchange.\nAdvantages\n Low communication delay.\n No infrastructure dependency.\n High reliability.\n Fast emergency communication.\nDisadvantages\n Frequent topology changes.\n Difficult routing.\n Security challenges.\n Limited communication range.\nThis architecture forms the basis of Vehicular Ad-hoc Networks (VANETs).",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p10_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 10,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "3. Hybrid Architecture\nHybrid architecture combines the advantages of centralized and decentralized architectures.\nVehicles communicate directly whenever possible while simultaneously communicating with\ncloud servers through roadside units and cellular networks.\nCharacteristics\n Flexible communication.\n Improved scalability.\n High reliability.\n Cloud integration.\nAdvantages\n Better communication coverage.\n Reduced latency.\n Improved reliability.\n Smart transportation support.\nDisadvantages\n Higher deployment cost.\n Increased system complexity.\n Complex network management.\nHybrid architecture is widely used in modern Intelligent Transportation Systems.\n2.5 Layered Architecture of Vehicular Networks\nVehicular communication follows a layered communication model similar to the OSI",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p11_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 11,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "2.5 Layered Architecture of Vehicular Networks\nVehicular communication follows a layered communication model similar to the OSI\narchitecture.\nPhysical Layer\nThe Physical Layer is responsible for transmitting and receiving wireless signals.\nIts functions include:\n Signal transmission.\n Signal reception.\n Modulation.\n Demodulation.\n Channel coding.\n Frequency allocation.\nTechnologies used:\n IEEE 802.11p",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p11_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 11,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": " LTE-V2X\n 5G NR\nData Link Layer (MAC Layer)\nThe MAC layer controls access to the communication channel.\nFunctions include:\n Medium access control.\n Collision avoidance.\n Frame synchronization.\n Error detection.\n Reliable communication.\nThe MAC layer ensures efficient utilization of the wireless channel.\nNetwork Layer\nThe Network Layer manages routing and forwarding of packets.\nFunctions include:\n Routing.\n Addressing.\n Packet forwarding.\n Path selection.\nCommon routing protocols include:\n AODV\n DSR\n GPSR\nTransport Layer\nThe Transport Layer provides end-to-end communication.\nFunctions include:\n Flow control.\n Congestion control.\n Reliable communication.\n Error recovery.\nCommon protocols include TCP and UDP.\nApplication Layer",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p12_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 12,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": " Flow control.\n Congestion control.\n Reliable communication.\n Error recovery.\nCommon protocols include TCP and UDP.\nApplication Layer\nThe Application Layer provides services directly to users and transportation applications.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p12_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 12,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "Examples include:\n Collision warning.\n Traffic monitoring.\n Smart parking.\n Navigation.\n Emergency notification.\n Fleet management.\n2.6 Communication Flow in Vehicular Networks\nThe communication process consists of the following steps:\n1. Vehicle sensors collect information such as speed, position, acceleration, and braking\nstatus.\n2. The On-Board Unit processes the collected information.\n3. The processed data is transmitted wirelessly to nearby vehicles or Roadside Units.\n4. RSUs forward the received information to the Traffic Management Center or Cloud\nServer.\n5. The Traffic Management Center analyzes the information and generates traffic alerts.\n6. Updated traffic information is transmitted back to vehicles for safe driving and\nefficient route planning.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p13_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 13,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "6. Updated traffic information is transmitted back to vehicles for safe driving and\nefficient route planning.\nThis continuous communication helps reduce accidents and improves transportation\nefficiency.\n2.7 Characteristics of Vehicular Network Architecture\nThe important characteristics are:\n Dynamic network topology.\n High-speed mobile nodes.\n Frequent network changes.\n Self-organizing communication.\n Low communication latency.\n Large geographical coverage.\n Reliable communication.\n Scalability.\n Real-time information exchange.\n Support for heterogeneous communication technologies.\n2.8 Advantages of Vehicular Network Architecture\nThe major advantages are:\n Improves road safety.\n Reduces traffic congestion.\n Supports autonomous vehicles.\n Enables intelligent transportation.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p13_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 13,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "The major advantages are:\n Improves road safety.\n Reduces traffic congestion.\n Supports autonomous vehicles.\n Enables intelligent transportation.\n Provides real-time communication.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p13_c2",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 13,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": " Efficient traffic management.\n Better emergency response.\n Enhanced navigation.\n Smart city integration.\n2.9 Limitations\nDespite numerous benefits, vehicular network architecture faces several challenges.\nSome limitations include:\n High infrastructure cost.\n Frequent topology changes.\n Wireless interference.\n Limited communication range.\n Cybersecurity threats.\n Privacy issues.\n Scalability problems in dense traffic.\n Standardization challenges among manufacturers.\n2.10 Applications of Vehicular Network Architecture\nVehicular network architecture supports numerous real-world applications.\nRoad Safety\n Collision avoidance.\n Emergency braking warning.\n Blind spot detection.\n Lane departure warning.\nTraffic Management\n Smart traffic lights.\n Congestion control.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p14_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 14,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": " Emergency braking warning.\n Blind spot detection.\n Lane departure warning.\nTraffic Management\n Smart traffic lights.\n Congestion control.\n Dynamic route guidance.\n Smart parking.\nCommercial Applications\n Fleet management.\n Vehicle tracking.\n Logistics monitoring.\n Electronic toll collection.\nSmart Cities\n Connected transportation.\n Pollution monitoring.\n Emergency response.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p14_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 14,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": " Intelligent infrastructure management.\nLecture 3: Communication Paradigms\n3.1 Introduction\nA communication paradigm is the method or model through which information is\nexchanged among vehicles, roadside infrastructure, pedestrians, cloud servers, and\ncommunication networks. In vehicular networks, communication paradigms define how\ndifferent entities interact to provide safe, reliable, and efficient transportation services.\nModern transportation systems require continuous information exchange because vehicles\ntravel at high speeds in dynamic environments. Communication paradigms enable vehicles to\nshare real-time information such as speed, location, direction, traffic conditions, and\nemergency alerts. This information helps drivers and autonomous vehicles make informed",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p15_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 15,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "emergency alerts. This information helps drivers and autonomous vehicles make informed\ndecisions, reducing accidents and improving traffic flow.\nVehicular communication paradigms form the foundation of Vehicle-to-Everything (V2X)\ncommunication and are widely used in Intelligent Transportation Systems (ITS).\n3.2 Need for Communication Paradigms\nThe increasing number of vehicles on roads has led to several challenges, including traffic\ncongestion, accidents, pollution, and inefficient transportation management. Communication\nparadigms address these issues by enabling seamless information exchange among different\ntransportation entities.\nThe main needs for communication paradigms include:\n Improving road safety.\n Reducing traffic congestion.\n Supporting autonomous and connected vehicles.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p15_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 15,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": " Improving road safety.\n Reducing traffic congestion.\n Supporting autonomous and connected vehicles.\n Providing real-time traffic information.\n Enabling emergency response services.\n Improving fuel efficiency.\n Enhancing passenger comfort.\n Supporting smart city transportation systems.\n3.3 Types of Communication Paradigms\nVehicular communication can occur in different ways depending on the communicating\nentities. The major communication paradigms are:\n Vehicle-to-Vehicle (V2V)\n Vehicle-to-Infrastructure (V2I)\n Vehicle-to-Pedestrian (V2P)\n Vehicle-to-Network (V2N)\n Vehicle-to-Cloud (V2C)\n Vehicle-to-Everything (V2X)",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p15_c2",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 15,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": "Each communication paradigm serves a specific purpose in connected transportation.\n3.4 Vehicle-to-Vehicle (V2V) Communication\nVehicle-to-Vehicle communication enables direct wireless communication between nearby\nvehicles without requiring any cellular network or Internet connection. Vehicles continuously\nexchange information such as speed, location, acceleration, braking status, and direction of\nmovement.\nThis real-time exchange of information allows vehicles to detect potential hazards before they\nbecome visible to drivers. For example, if a vehicle suddenly applies brakes, it immediately\nbroadcasts an emergency braking message to nearby vehicles, allowing following vehicles to\nreact quickly and avoid collisions.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p16_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 16,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "broadcasts an emergency braking message to nearby vehicles, allowing following vehicles to\nreact quickly and avoid collisions.\nV2V communication mainly supports safety-critical applications and uses technologies such\nas Dedicated Short-Range Communication (DSRC) and Cellular Vehicle-to-Everything\n(C-V2X).\nAdvantages\n Very low communication delay.\n No dependence on cellular infrastructure.\n Fast emergency message delivery.\n Improved collision avoidance.\n High reliability.\nApplications\n Forward collision warning.\n Emergency electronic brake light.\n Lane change assistance.\n Blind spot detection.\n Cooperative driving.\n Vehicle platooning.\n3.5 Vehicle-to-Infrastructure (V2I) Communication\nVehicle-to-Infrastructure communication enables vehicles to communicate with roadside",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p16_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 16,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "3.5 Vehicle-to-Infrastructure (V2I) Communication\nVehicle-to-Infrastructure communication enables vehicles to communicate with roadside\ninfrastructure such as traffic lights, road signs, toll gates, parking systems, and Roadside\nUnits (RSUs).\nThe roadside infrastructure collects traffic information from vehicles and provides updated\ntraffic conditions, speed limits, parking availability, weather alerts, and road hazard warnings.\nTraffic Management Centers also receive information from RSUs to optimize traffic flow and\nreduce congestion.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p16_c2",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 16,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": "Advantages\n Better traffic management.\n Reduced travel time.\n Improved fuel efficiency.\n Intelligent traffic signal control.\n Enhanced road safety.\nApplications\n Smart traffic lights.\n Electronic toll collection.\n Smart parking.\n Dynamic route guidance.\n Traffic congestion monitoring.\n3.6 Vehicle-to-Pedestrian (V2P) Communication\nVehicle-to-Pedestrian communication enables communication between vehicles and\npedestrians carrying smartphones, wearable devices, or smart sensors.\nPedestrian safety is one of the major concerns in urban transportation. V2P communication\nhelps drivers detect pedestrians even under poor visibility conditions or when pedestrians are\nhidden behind obstacles.\nThe pedestrian's mobile device periodically broadcasts its location to nearby vehicles.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p17_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 17,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "hidden behind obstacles.\nThe pedestrian's mobile device periodically broadcasts its location to nearby vehicles.\nSimilarly, vehicles send warning messages to pedestrians whenever there is a potential\ncollision risk.\nAdvantages\n Improves pedestrian safety.\n Reduces accidents.\n Supports smart crosswalks.\n Protects cyclists and vulnerable road users.\nApplications\n School zones.\n Hospital areas.\n Zebra crossings.\n Bicycle safety systems.\n Public transportation terminals.\n3.7 Vehicle-to-Network (V2N) Communication\nVehicle-to-Network communication enables vehicles to communicate with mobile\ncommunication networks such as 4G LTE, 5G, and future 6G networks.\nUnlike V2V communication, V2N communication requires cellular network infrastructure.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p17_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 17,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "Vehicles connect to the Internet through cellular base stations to access cloud services,\nnavigation systems, software updates, and traffic information.\nAdvantages\n Wide-area communication.\n Internet connectivity.\n Remote diagnostics.\n Continuous navigation support.\n Cloud integration.\nApplications\n Fleet management.\n Remote vehicle monitoring.\n Navigation services.\n Software updates.\n Vehicle diagnostics.\n3.8 Vehicle-to-Cloud (V2C) Communication\nVehicle-to-Cloud communication enables vehicles to exchange information with cloud\ncomputing platforms.\nModern vehicles generate enormous amounts of data every second. Cloud servers store,\nprocess, and analyze this data using Artificial Intelligence and Big Data Analytics.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p18_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 18,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "process, and analyze this data using Artificial Intelligence and Big Data Analytics.\nThe processed information is then transmitted back to vehicles for route optimization,\npredictive maintenance, traffic prediction, and autonomous driving.\nAdvantages\n Large storage capacity.\n Powerful data analysis.\n Global accessibility.\n AI-based decision making.\n Easy software management.\nApplications\n Vehicle health monitoring.\n Fleet management.\n Smart navigation.\n Weather information.\n Predictive maintenance.\n3.9 Vehicle-to-Everything (V2X) Communication\nVehicle-to-Everything (V2X) communication is the integration of all communication\nparadigms into a unified communication system.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p18_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 18,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "V2X enables communication between vehicles and every other entity in the transportation\necosystem, including:\n Vehicles (V2V)\n Infrastructure (V2I)\n Pedestrians (V2P)\n Networks (V2N)\n Cloud servers (V2C)\nBy integrating all communication modes, V2X provides comprehensive situational awareness\nand supports connected, cooperative, and autonomous driving.\nAdvantages\n Complete transportation connectivity.\n Better road safety.\n High communication reliability.\n Support for autonomous vehicles.\n Smart city integration.\nApplications\n Intelligent Transportation Systems.\n Connected vehicles.\n Autonomous driving.\n Smart highways.\n Cooperative traffic management.\n3.10 Comparison of Communication Paradigms\nCommunication\nType\nCommunicates With Main Purpose",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p19_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 19,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": " Smart highways.\n Cooperative traffic management.\n3.10 Comparison of Communication Paradigms\nCommunication\nType\nCommunicates With Main Purpose\nV2V Vehicle ↔ Vehicle Collision avoidance and cooperative\ndriving\nV2I Vehicle ↔ Infrastructure Traffic management and road\ninformation\nV2P Vehicle ↔ Pedestrian Pedestrian safety\nV2N Vehicle ↔ Cellular\nNetwork\nInternet connectivity and cloud access\nV2C Vehicle ↔ Cloud Server Data storage and analytics\nV2X Vehicle ↔ Everything Intelligent transportation and\nautonomous driving\n3.11 Benefits of Communication Paradigms\nCommunication paradigms provide numerous benefits, including:\n Reduced road accidents.\n Efficient traffic management.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p19_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 19,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": " Lower travel time.\n Reduced fuel consumption.\n Improved emergency response.\n Better navigation.\n Enhanced passenger comfort.\n Support for connected and autonomous vehicles.\n Smart city integration.\n3.12 Challenges\nDespite their advantages, communication paradigms face several challenges:\n High-speed vehicle mobility.\n Frequent network topology changes.\n Wireless interference.\n Communication latency.\n Security threats.\n Data privacy issues.\n Scalability in dense traffic.\n Standardization among manufacturers.\nResearchers are actively working on technologies such as 5G, Artificial Intelligence, Edge\nComputing, and Blockchain to overcome these challenges.\nLecture 4: Dedicated Short-Range Communication (DSRC)\n4.1 Introduction",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p20_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 20,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "Computing, and Blockchain to overcome these challenges.\nLecture 4: Dedicated Short-Range Communication (DSRC)\n4.1 Introduction\nDedicated Short-Range Communication (DSRC) is a wireless communication technology\nspecifically developed for Intelligent Transportation Systems (ITS). It enables fast and\nreliable communication between vehicles and between vehicles and roadside infrastructure\nover short distances. DSRC is designed primarily for safety-critical applications where\ncommunication must occur with very low delay.\nThe increasing number of road accidents and traffic congestion has created the need for a\ncommunication system that can exchange information instantly. DSRC fulfills this\nrequirement by allowing vehicles to transmit and receive safety messages within",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p20_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 20,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "requirement by allowing vehicles to transmit and receive safety messages within\nmilliseconds, helping drivers avoid accidents and improve traffic efficiency.\nDSRC operates in the 5.9 GHz licensed frequency band and is based on the IEEE 802.11p\nwireless communication standard, which is specially designed for vehicular environments.\n4.2 Definition\nDedicated Short-Range Communication (DSRC) is a wireless communication technology\nthat enables direct, low-latency communication between vehicles and roadside infrastructure\nover short distances to support road safety and traffic management applications.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p20_c2",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 20,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": "4.3 Need for DSRC\nModern transportation systems require continuous communication among vehicles to\nimprove road safety and traffic efficiency. Conventional wireless technologies such as Wi-Fi\nare not designed to support high-speed moving vehicles.\nDSRC was developed to overcome these limitations by providing:\n Fast communication between moving vehicles.\n Reliable transmission of safety messages.\n Low communication delay.\n Efficient traffic management.\n Support for connected and autonomous vehicles.\n4.4 Working Principle of DSRC\nThe working of DSRC involves continuous communication among vehicles and roadside\ninfrastructure.\nInitially, sensors installed in the vehicle collect information such as speed, position,",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p21_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 21,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "infrastructure.\nInitially, sensors installed in the vehicle collect information such as speed, position,\nacceleration, direction, braking status, and steering angle. This information is processed by\nthe On-Board Unit (OBU) installed in the vehicle.\nThe OBU periodically broadcasts safety messages through the DSRC wireless channel.\nNearby vehicles receive these messages instantly and analyze the information to determine\nwhether there is any risk of collision or unsafe driving condition.\nAt the same time, Roadside Units (RSUs) receive information from passing vehicles and\nforward important traffic data to the Traffic Management Center (TMC). The TMC\nanalyzes traffic conditions and sends warnings or traffic updates back to vehicles through the\nRSUs.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p21_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 21,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "analyzes traffic conditions and sends warnings or traffic updates back to vehicles through the\nRSUs.\nThis continuous exchange of information enables drivers to react quickly and improves\noverall transportation safety.\n4.5 Components of DSRC\nThe DSRC system consists of several important components.\n1. On-Board Unit (OBU)\nThe On-Board Unit is installed inside every connected vehicle. It acts as the communication\ndevice that exchanges information with nearby vehicles and roadside infrastructure.\nFunctions of the OBU include:\n Collecting sensor data.\n Broadcasting safety messages.\n Receiving messages from nearby vehicles.\n GPS positioning.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p21_c2",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 21,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": " Supporting navigation and warning systems.\n2. Roadside Unit (RSU)\nRoadside Units are communication devices installed along highways, intersections, and\ntraffic signals.\nTheir functions include:\n Receiving vehicle information.\n Broadcasting traffic alerts.\n Providing Internet connectivity.\n Supporting electronic toll collection.\n Communicating with the Traffic Management Center.\n3. Traffic Management Center (TMC)\nThe Traffic Management Center monitors traffic conditions over a large geographical area.\nIts functions include:\n Traffic monitoring.\n Accident detection.\n Traffic signal coordination.\n Congestion management.\n Emergency response coordination.\n4. GPS System\nThe GPS system provides accurate vehicle location information that is used for navigation",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p22_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 22,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": " Emergency response coordination.\n4. GPS System\nThe GPS system provides accurate vehicle location information that is used for navigation\nand safety message generation.\n4.6 IEEE 802.11p Standard\nDSRC communication is based on the IEEE 802.11p wireless communication standard, also\nknown as Wireless Access in Vehicular Environments (WAVE).\nThe IEEE 802.11p standard was developed specifically for communication among high-\nspeed vehicles. Unlike conventional Wi-Fi standards, IEEE 802.11p supports rapid\nconnection establishment without requiring long association procedures.\nIts major characteristics include:\n Operating frequency of 5.9 GHz.\n Communication range of approximately 300 to 1000 meters.\n Very low communication latency.\n High mobility support.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p22_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 22,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": " Communication range of approximately 300 to 1000 meters.\n Very low communication latency.\n High mobility support.\n Reliable communication in dynamic environments.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p22_c2",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 22,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": "The IEEE 802.11p standard forms the physical and MAC layers of the DSRC communication\nsystem.\n4.7 Communication Process in DSRC\nThe communication process follows several sequential steps.\n1. Vehicle sensors continuously monitor vehicle parameters.\n2. The OBU processes the collected information.\n3. The information is transmitted through the DSRC wireless channel.\n4. Nearby vehicles receive the safety messages.\n5. Roadside Units receive vehicle information and forward it to the Traffic Management\nCenter.\n6. The Traffic Management Center analyzes traffic conditions and generates warning\nmessages.\n7. Updated information is transmitted back to vehicles to assist drivers.\nThis communication process occurs repeatedly within milliseconds to ensure road safety.\n4.8 Applications of DSRC",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p23_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 23,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "This communication process occurs repeatedly within milliseconds to ensure road safety.\n4.8 Applications of DSRC\nDSRC supports a wide range of applications in Intelligent Transportation Systems.\nRoad Safety Applications\nSafety is the primary objective of DSRC.\nMajor safety applications include:\n Forward collision warning.\n Emergency electronic brake warning.\n Blind spot detection.\n Lane departure warning.\n Wrong-way driving alerts.\n Intersection collision warning.\n Road hazard notification.\n Emergency vehicle notification.\nThese applications help drivers make timely decisions and reduce accidents.\nTraffic Management Applications\nDSRC improves traffic efficiency through:\n Intelligent traffic signal control.\n Congestion monitoring.\n Dynamic route guidance.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p23_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 23,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "DSRC improves traffic efficiency through:\n Intelligent traffic signal control.\n Congestion monitoring.\n Dynamic route guidance.\n Smart parking management.\n Electronic toll collection.\n Traffic flow optimization.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p23_c2",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 23,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": "Commercial Applications\nCommercial transportation uses DSRC for:\n Fleet management.\n Vehicle tracking.\n Logistics monitoring.\n Fuel management.\n Remote diagnostics.\nSmart City Applications\nDSRC supports smart city development through:\n Connected transportation.\n Intelligent road infrastructure.\n Emergency management.\n Public transportation monitoring.\n Environmental monitoring.\n4.9 Advantages of DSRC\nDSRC provides several important advantages.\n Very low communication delay.\n High communication reliability.\n Fast safety message transmission.\n Dedicated communication spectrum.\n High mobility support.\n Improved road safety.\n Efficient traffic management.\n Supports connected vehicles.\n Easy integration with Intelligent Transportation Systems.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p24_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 24,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": " Improved road safety.\n Efficient traffic management.\n Supports connected vehicles.\n Easy integration with Intelligent Transportation Systems.\nThese advantages make DSRC highly suitable for safety-critical vehicular communication.\n4.10 Limitations of DSRC\nDespite its advantages, DSRC has certain limitations.\n Limited communication range.\n High infrastructure deployment cost.\n Requires installation of Roadside Units.\n Limited scalability in dense traffic.\n Spectrum congestion.\n Security vulnerabilities.\n Privacy concerns.\n Compatibility issues with emerging communication technologies.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p24_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 24,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "Researchers are working on integrating DSRC with 5G and Cellular Vehicle-to-Everything\n(C-V2X) technologies to overcome these limitations.\n4.11 DSRC Compared with Wi-Fi\nAlthough DSRC is based on IEEE 802.11 technology, it differs significantly from traditional\nWi-Fi.\nWi-Fi is designed mainly for fixed users and indoor communication, whereas DSRC is\nspecifically developed for high-speed vehicular communication.\nDSRC provides lower communication delay, better mobility support, and higher reliability\nfor safety applications.\nUnlike Wi-Fi, DSRC uses a dedicated frequency band and does not require users to establish\nlengthy network connections before communication.\n4.12 DSRC Compared with Cellular Communication",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p25_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 25,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "lengthy network connections before communication.\n4.12 DSRC Compared with Cellular Communication\nDSRC enables direct communication between nearby vehicles without depending on cellular\ninfrastructure.\nCellular communication, on the other hand, uses mobile communication networks such as\nLTE and 5G to connect vehicles over larger geographical areas.\nDSRC provides lower latency for nearby safety communication, while cellular\ncommunication offers wider coverage and Internet connectivity.\nMany modern transportation systems combine both technologies to achieve better\nperformance.\nLecture 5: Cellular Vehicle-to-Everything (C-V2X)\n5.1 Introduction\nCellular Vehicle-to-Everything (C-V2X) is an advanced wireless communication",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p25_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 25,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "Lecture 5: Cellular Vehicle-to-Everything (C-V2X)\n5.1 Introduction\nCellular Vehicle-to-Everything (C-V2X) is an advanced wireless communication\ntechnology developed by the 3rd Generation Partnership Project (3GPP) to support\nIntelligent Transportation Systems (ITS). It enables vehicles to communicate with other\nvehicles, roadside infrastructure, pedestrians, cloud servers, and mobile networks using 4G\nLTE and 5G cellular technologies.\nAs the number of connected and autonomous vehicles increases, there is a growing demand\nfor reliable, low-latency, and high-speed communication. C-V2X addresses these\nrequirements by providing both direct communication between nearby vehicles and\nnetwork-based communication through cellular infrastructure.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p25_c2",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 25,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": "requirements by providing both direct communication between nearby vehicles and\nnetwork-based communication through cellular infrastructure.\nUnlike DSRC, which mainly supports short-range communication, C-V2X offers wider\ncoverage, better scalability, and seamless Internet connectivity. It is considered one of the key\nenabling technologies for future autonomous transportation and smart cities.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p25_c3",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 25,
+      "chunk_index": 3
+    }
+  },
+  {
+    "text": "5.2 Definition\nCellular Vehicle-to-Everything (C-V2X) is a wireless communication technology that\nenables vehicles to exchange real-time information with other vehicles, roadside\ninfrastructure, pedestrians, cloud servers, and communication networks using LTE and 5G\ncellular technologies.\n5.3 Need for C-V2X\nModern transportation systems require continuous communication over both short and long\ndistances. Traditional short-range communication technologies alone cannot satisfy the\ngrowing demand for connected and autonomous vehicles.\nC-V2X was developed to provide:\n Reliable communication over large geographical areas.\n Ultra-low latency for safety applications.\n High-speed data transmission.\n Internet connectivity.\n Cloud-based intelligent transportation services.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p26_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 26,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": " High-speed data transmission.\n Internet connectivity.\n Cloud-based intelligent transportation services.\n Support for autonomous driving.\n Smart city integration.\nIts ability to combine direct communication with cellular network communication makes it\nhighly suitable for next-generation transportation systems.\n5.4 Components of C-V2X\nThe C-V2X system consists of several communication components.\n1. On-Board Unit (OBU)\nThe On-Board Unit is installed inside every connected vehicle. It collects information from\nvehicle sensors and exchanges data with nearby vehicles and cellular networks.\nIts major functions include:\n Vehicle communication.\n GPS positioning.\n Safety message transmission.\n Navigation assistance.\n Internet connectivity.\n2. Cellular Base Station",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p26_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 26,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": " Vehicle communication.\n GPS positioning.\n Safety message transmission.\n Navigation assistance.\n Internet connectivity.\n2. Cellular Base Station\nCellular Base Stations, such as eNodeB (LTE) and gNodeB (5G), provide communication\nbetween vehicles and mobile communication networks.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p26_c2",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 26,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": "Their functions include:\n Wide-area communication.\n Internet access.\n Data forwarding.\n Cloud connectivity.\n Traffic information exchange.\n3. Roadside Unit (RSU)\nRoadside Units communicate with vehicles and provide access to traffic infrastructure.\nFunctions include:\n Traffic signal communication.\n Emergency information dissemination.\n Traffic monitoring.\n Road condition updates.\n4. Cloud Server\nCloud servers process and store the large amount of data generated by connected vehicles.\nFunctions include:\n Data storage.\n Navigation support.\n Traffic prediction.\n Software updates.\n Vehicle diagnostics.\n Artificial Intelligence applications.\n5. Traffic Management Center (TMC)\nThe Traffic Management Center collects information from cloud servers and roadside",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p27_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 27,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "5. Traffic Management Center (TMC)\nThe Traffic Management Center collects information from cloud servers and roadside\ninfrastructure to monitor transportation systems.\nIts functions include:\n Traffic monitoring.\n Congestion management.\n Accident detection.\n Emergency coordination.\n Route optimization.\n5.5 Communication Modes in C-V2X\nC-V2X supports two major communication modes.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p27_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 27,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "Direct Communication (PC5 Interface)\nIn this mode, nearby vehicles communicate directly without depending on cellular\ninfrastructure.\nThe PC5 interface enables rapid exchange of safety messages between vehicles.\nThis communication is mainly used for:\n Collision avoidance.\n Emergency braking alerts.\n Blind spot detection.\n Lane change assistance.\n Vehicle platooning.\nThe direct communication mode provides very low communication delay, making it suitable\nfor safety-critical applications.\nNetwork Communication (Uu Interface)\nIn the Uu interface, communication occurs through the cellular network.\nVehicle information is transmitted to the nearest cellular base station, which forwards it to\ncloud servers and Traffic Management Centers.\nThis mode supports:\n Navigation services.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p28_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 28,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "cloud servers and Traffic Management Centers.\nThis mode supports:\n Navigation services.\n Internet access.\n Remote vehicle diagnostics.\n Fleet management.\n Cloud computing.\n Software updates.\nNetwork communication provides wide-area coverage and continuous connectivity.\n5.6 Types of C-V2X Communication\nC-V2X supports different communication modes depending on the communicating entities.\nVehicle-to-Vehicle (V2V)\nVehicles exchange information directly to improve safety and avoid collisions.\nApplications include:\n Emergency braking warning.\n Lane change assistance.\n Cooperative driving.\n Collision avoidance.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p28_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 28,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "Vehicle-to-Infrastructure (V2I)\nVehicles communicate with roadside infrastructure such as traffic lights and Roadside Units.\nApplications include:\n Traffic signal information.\n Smart parking.\n Electronic toll collection.\n Congestion management.\nVehicle-to-Pedestrian (V2P)\nVehicles communicate with pedestrians carrying smartphones or wearable devices.\nApplications include:\n Pedestrian safety.\n School zone protection.\n Crosswalk warning systems.\n Cyclist protection.\nVehicle-to-Network (V2N)\nVehicles communicate with cellular communication networks.\nApplications include:\n Cloud services.\n Internet connectivity.\n Remote monitoring.\n Navigation updates.\n5.7 LTE-V2X\nLTE-V2X is based on 3GPP Release 14 and uses LTE cellular technology for vehicular\ncommunication.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p29_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 29,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": " Navigation updates.\n5.7 LTE-V2X\nLTE-V2X is based on 3GPP Release 14 and uses LTE cellular technology for vehicular\ncommunication.\nIts major features include:\n Reliable communication.\n Low latency.\n High-speed mobility support.\n Better communication coverage.\n Improved traffic safety.\nLTE-V2X supports both direct communication and network-based communication.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p29_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 29,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "5.8 5G NR-V2X\n5G New Radio Vehicle-to-Everything (NR-V2X) is the latest evolution of C-V2X\ncommunication.\nIt provides:\n Ultra-low latency.\n High data transmission speed.\n Massive device connectivity.\n High reliability.\n Artificial Intelligence integration.\n Autonomous vehicle support.\n5G NR-V2X enables real-time communication required for fully autonomous transportation\nsystems.\n5.9 Applications of C-V2X\nC-V2X supports numerous Intelligent Transportation System applications.\nRoad Safety\nMajor safety applications include:\n Collision avoidance.\n Emergency vehicle warning.\n Blind spot detection.\n Lane departure warning.\n Intersection safety.\n Road hazard notification.\nTraffic Management\nTraffic applications include:\n Smart traffic signals.\n Dynamic route guidance.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p30_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 30,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": " Road hazard notification.\nTraffic Management\nTraffic applications include:\n Smart traffic signals.\n Dynamic route guidance.\n Congestion monitoring.\n Smart parking.\n Electronic toll collection.\nCommercial Applications\nCommercial transportation uses C-V2X for:\n Fleet management.\n Vehicle tracking.\n Logistics monitoring.\n Remote diagnostics.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p30_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 30,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": " Fuel management.\nAutonomous Vehicles\nC-V2X is one of the key communication technologies supporting autonomous vehicles.\nApplications include:\n Cooperative driving.\n Vehicle platooning.\n Remote monitoring.\n AI-assisted navigation.\nSmart City Applications\nC-V2X contributes significantly to smart city development through:\n Connected transportation.\n Emergency response.\n Intelligent traffic control.\n Environmental monitoring.\n Public transportation management.\n5.10 Advantages of C-V2X\nC-V2X provides several advantages over traditional communication technologies.\nThese include:\n Long communication range.\n High communication reliability.\n Very low latency.\n High-speed data transmission.\n Better scalability.\n Wide-area coverage.\n Seamless Internet connectivity.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p31_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 31,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": " Very low latency.\n High-speed data transmission.\n Better scalability.\n Wide-area coverage.\n Seamless Internet connectivity.\n Support for autonomous vehicles.\n Smart city integration.\n Efficient traffic management.\n5.11 Limitations of C-V2X\nDespite its advantages, C-V2X has certain limitations.\nSome challenges include:\n High deployment cost.\n Dependence on cellular infrastructure.\n Cybersecurity threats.\n Data privacy concerns.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p31_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 31,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": " Network congestion.\n Compatibility with older communication systems.\n Standardization challenges.\nResearchers continue to improve C-V2X technology through 5G and future 6G\ncommunication systems.\n5.12 Comparison of C-V2X and DSRC\nBoth C-V2X and DSRC are widely used in vehicular communication systems.\nDSRC provides direct short-range communication with very low delay, whereas C-V2X\nsupports both direct communication and wide-area communication using cellular networks.\nC-V2X offers better communication range, Internet connectivity, and scalability, making it\nmore suitable for future connected and autonomous vehicles.\nHowever, DSRC remains highly effective for safety-critical short-range applications.\nLecture 6: Vehicular Ad-hoc Networks (VANETs)\n6.1 Introduction",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p32_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 32,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "However, DSRC remains highly effective for safety-critical short-range applications.\nLecture 6: Vehicular Ad-hoc Networks (VANETs)\n6.1 Introduction\nA Vehicular Ad-hoc Network (VANET) is a special type of Mobile Ad-hoc Network\n(MANET) in which vehicles act as mobile nodes and communicate with one another using\nwireless communication technologies. Unlike traditional communication systems that depend\non fixed infrastructure, VANETs are self-organizing networks where vehicles dynamically\nestablish communication links while moving.\nThe rapid growth in the number of vehicles has increased traffic congestion and road\naccidents. VANETs were introduced to improve road safety, enhance traffic efficiency, and\nsupport Intelligent Transportation Systems (ITS). Through VANETs, vehicles can exchange",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p32_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 32,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "support Intelligent Transportation Systems (ITS). Through VANETs, vehicles can exchange\nreal-time information about traffic conditions, accidents, road hazards, weather conditions,\nand vehicle movements.\nVANET technology plays a significant role in connected vehicles, autonomous driving, smart\ntransportation, and smart city applications.\n6.2 Definition\nA Vehicular Ad-hoc Network (VANET) is a decentralized wireless communication\nnetwork in which vehicles communicate with each other and roadside infrastructure to\nexchange real-time traffic and safety information without requiring permanent network\ninfrastructure.\n6.3 Need for VANET\nModern transportation systems require continuous communication among vehicles to ensure",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p32_c2",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 32,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": "infrastructure.\n6.3 Need for VANET\nModern transportation systems require continuous communication among vehicles to ensure\nroad safety and efficient traffic management. Conventional transportation systems cannot\nprovide real-time information to drivers about traffic conditions or potential hazards.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p32_c3",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 32,
+      "chunk_index": 3
+    }
+  },
+  {
+    "text": "VANETs were developed to overcome these limitations by providing:\n Real-time vehicle communication.\n Accident prevention.\n Intelligent traffic management.\n Efficient route guidance.\n Support for autonomous vehicles.\n Improved emergency response.\n Smart city transportation.\nThe dynamic nature of VANET enables vehicles to share important information instantly,\nallowing drivers to make safer and more informed decisions.\n6.4 Components of VANET\nThe VANET architecture consists of several communication components.\n1. Vehicle (On-Board Unit – OBU)\nEach vehicle is equipped with an On-Board Unit (OBU) that enables wireless\ncommunication with nearby vehicles and roadside infrastructure.\nThe OBU performs the following functions:\n Collecting sensor information.\n Vehicle positioning using GPS.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p33_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 33,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "The OBU performs the following functions:\n Collecting sensor information.\n Vehicle positioning using GPS.\n Wireless communication.\n Safety message transmission.\n Navigation assistance.\n Internet connectivity.\nThe OBU acts as both a communication transmitter and receiver.\n2. Roadside Unit (RSU)\nRoadside Units are fixed communication devices installed along roads, highways, and traffic\nintersections.\nTheir functions include:\n Receiving vehicle information.\n Broadcasting traffic alerts.\n Traffic signal coordination.\n Electronic toll collection.\n Providing Internet connectivity.\n Supporting emergency communication.\nRSUs extend communication coverage and improve communication reliability.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p33_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 33,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "3. Application Unit (AU)\nThe Application Unit provides services directly to drivers and passengers.\nApplications include:\n Navigation.\n Multimedia services.\n Traffic information.\n Emergency notifications.\n Vehicle diagnostics.\n4. Traffic Management Center (TMC)\nThe Traffic Management Center receives information from Roadside Units and cloud servers.\nIts functions include:\n Traffic monitoring.\n Accident detection.\n Congestion management.\n Emergency coordination.\n Route optimization.\nThe TMC continuously monitors road conditions and provides updated information to\nvehicles.\n6.5 Working Principle of VANET\nThe operation of VANET involves continuous communication among vehicles and roadside\ninfrastructure.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p34_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 34,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": "vehicles.\n6.5 Working Principle of VANET\nThe operation of VANET involves continuous communication among vehicles and roadside\ninfrastructure.\nInitially, vehicle sensors collect information such as speed, location, direction, acceleration,\nbraking status, and engine condition.\nThe collected information is processed by the On-Board Unit (OBU), which broadcasts safety\nmessages through wireless communication.\nNearby vehicles receive these messages and analyze the information to determine whether\nthere is any possibility of collision or traffic hazard.\nRoadside Units also receive the information and forward it to the Traffic Management\nCenter.\nThe Traffic Management Center analyzes traffic conditions and sends traffic alerts, route\nguidance, and emergency warnings back to vehicles.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p34_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 34,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "Center.\nThe Traffic Management Center analyzes traffic conditions and sends traffic alerts, route\nguidance, and emergency warnings back to vehicles.\nThis communication process occurs continuously to ensure road safety and efficient\ntransportation.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p34_c2",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 34,
+      "chunk_index": 2
+    }
+  },
+  {
+    "text": "6.6 Communication Types in VANET\nVANET supports different communication modes depending on the communicating entities.\nVehicle-to-Vehicle (V2V)\nVehicle-to-Vehicle communication enables direct communication between nearby vehicles.\nVehicles exchange information such as:\n Speed.\n Position.\n Direction.\n Brake status.\n Accident warnings.\nApplications include:\n Collision avoidance.\n Emergency braking alerts.\n Lane change assistance.\n Cooperative driving.\nVehicle-to-Infrastructure (V2I)\nVehicle-to-Infrastructure communication enables communication between vehicles and\nRoadside Units.\nApplications include:\n Traffic signal information.\n Electronic toll collection.\n Smart parking.\n Traffic congestion monitoring.\n Road condition updates.\nVehicle-to-Pedestrian (V2P)",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p35_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 35,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": " Electronic toll collection.\n Smart parking.\n Traffic congestion monitoring.\n Road condition updates.\nVehicle-to-Pedestrian (V2P)\nVehicle-to-Pedestrian communication enables communication between vehicles and\npedestrians carrying smartphones or wearable devices.\nApplications include:\n Pedestrian safety.\n School zone protection.\n Smart crosswalks.\n Cyclist safety.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p35_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 35,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "Vehicle-to-Network (V2N)\nVehicle-to-Network communication enables vehicles to communicate with cellular\ncommunication networks.\nApplications include:\n Cloud services.\n Navigation.\n Fleet management.\n Vehicle diagnostics.\n Internet connectivity.\n6.7 Characteristics of VANET\nVehicular Ad-hoc Networks possess several unique characteristics.\n High vehicle mobility.\n Dynamic network topology.\n Frequent communication link changes.\n Self-organizing network.\n Low communication latency.\n Large geographical coverage.\n Real-time information exchange.\n High communication reliability.\n GPS-based positioning.\n Infrastructure-assisted communication.\nThese characteristics distinguish VANET from traditional wireless networks.\n6.8 Applications of VANET",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p36_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 36,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": " Infrastructure-assisted communication.\nThese characteristics distinguish VANET from traditional wireless networks.\n6.8 Applications of VANET\nVANET supports a wide range of applications.\nRoad Safety Applications\nSafety applications include:\n Collision avoidance.\n Emergency vehicle notification.\n Blind spot warning.\n Lane departure warning.\n Road hazard notification.\n Intersection safety.\n Wrong-way driving alerts.\nThese applications significantly reduce road accidents.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p36_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 36,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "Traffic Management Applications\nTraffic applications include:\n Intelligent traffic signal control.\n Dynamic route guidance.\n Congestion monitoring.\n Smart parking.\n Electronic toll collection.\n Traffic flow optimization.\nThese applications improve transportation efficiency and reduce travel time.\nCommercial Applications\nCommercial transportation uses VANET for:\n Fleet management.\n Vehicle tracking.\n Logistics monitoring.\n Fuel management.\n Remote diagnostics.\nInfotainment Applications\nVANET also provides entertainment and information services.\nThese include:\n Internet access.\n Multimedia streaming.\n Online navigation.\n Weather updates.\n Tourist information.\n Location-based services.\nSmart City Applications\nVANET contributes to smart city development through:",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p37_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 37,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": " Weather updates.\n Tourist information.\n Location-based services.\nSmart City Applications\nVANET contributes to smart city development through:\n Connected transportation.\n Emergency response.\n Environmental monitoring.\n Intelligent road infrastructure.\n Public transportation management.\n6.9 Advantages of VANET\nVANET offers numerous advantages.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p37_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 37,
+      "chunk_index": 1
+    }
+  },
+  {
+    "text": "These include:\n Improved road safety.\n Reduced traffic congestion.\n Faster emergency response.\n Efficient traffic management.\n Reduced fuel consumption.\n Lower carbon emissions.\n Better navigation.\n Support for autonomous vehicles.\n Smart city integration.\n Real-time communication.\nThese advantages make VANET one of the most important technologies in Intelligent\nTransportation Systems.\n6.10 Limitations of VANET\nDespite its advantages, VANET has several challenges.\nThese include:\n Frequent topology changes.\n High-speed vehicle mobility.\n Limited wireless communication range.\n Communication interference.\n Network congestion.\n High deployment cost.\n Security attacks.\n Privacy concerns.\n Scalability issues.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p38_c0",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 38,
+      "chunk_index": 0
+    }
+  },
+  {
+    "text": " Communication interference.\n Network congestion.\n High deployment cost.\n Security attacks.\n Privacy concerns.\n Scalability issues.\nResearchers continue to develop new routing protocols and communication technologies to\novercome these limitations.\n6.11 VANET Compared with MANET\nAlthough VANET is derived from Mobile Ad-hoc Networks (MANETs), there are significant\ndifferences.\nMANET supports communication among general mobile devices such as smartphones and\nlaptops, whereas VANET specifically supports communication among vehicles.\nVehicles move at much higher speeds than mobile devices, resulting in rapid topology\nchanges and shorter communication durations.\nUnlike MANET, VANET heavily depends on GPS, Roadside Units, and Intelligent\nTransportation Systems.",
+    "metadata": {
+      "chunk_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce_p38_c1",
+      "doc_id": "0e2e98c0-ee67-4715-b575-708a0cf9c5ce",
+      "filename": "UNIT 1_Complete Notes.pdf",
+      "page": 38,
+      "chunk_index": 1
+    }
+  }
+]

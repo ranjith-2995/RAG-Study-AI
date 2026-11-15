@@ -1,0 +1,15 @@
+fastapi>=0.110.0
+uvicorn[standard]>=0.28.0
+python-multipart>=0.0.9
+pydantic>=2.6.0
+python-dotenv>=1.0.1
+pypdf>=4.1.0
+sentence-transformers>=2.5.1
+faiss-cpu>=1.8.0
+google-generativeai>=0.8.0
+google-genai>=0.1.1
+langchain>=0.1.13
+langchain-community>=0.0.29
+langchain-core>=0.1.33
+torch>=2.2.0
+
