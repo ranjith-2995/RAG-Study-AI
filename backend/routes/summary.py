@@ -1,12 +1,17 @@
 from fastapi import APIRouter, HTTPException
-from typing import Optional
+from typing import Any
 from backend.models.schemas import SummaryRequest, SummaryResponse
 from backend.services.storage_service import get_document, get_all_documents
 from backend.services.pdf_service import extract_text_from_pdf
 from backend.services.gemini_service import GeminiService
-from backend.rag.vectorstore import FAISSVectorStoreManager
 
 router = APIRouter(prefix="/api/summary", tags=["summary"])
+
+def _generate_summary(gemini: GeminiService, text: str, filename: str, language: str) -> dict[str, Any]:
+    try:
+        return gemini.generate_summary(text, filename, language=language)
+    except RuntimeError as error:
+        raise HTTPException(status_code=503, detail=str(error)) from error
 
 @router.post("", response_model=SummaryResponse)
 async def summarize_study_material(request: SummaryRequest):
@@ -16,6 +21,7 @@ async def summarize_study_material(request: SummaryRequest):
     from an uploaded document.
     """
     gemini = GeminiService.get_instance()
+    language = request.language if request.language in {"English", "Tamil"} else "English"
     
     # If a specific doc_id is provided
     if request.doc_id:
@@ -30,7 +36,7 @@ async def summarize_study_material(request: SummaryRequest):
         pages_data, _ = extract_text_from_pdf(file_path)
         full_text = "\n\n".join(f"[Page {p['page']}]\n{p['text']}" for p in pages_data)
         
-        res = gemini.generate_summary(full_text, doc.get("filename", "Study Notes"))
+        res = _generate_summary(gemini, full_text, doc.get("filename", "Study Notes"), language)
         return SummaryResponse(
             doc_id=request.doc_id,
             filename=doc.get("filename"),
@@ -62,7 +68,7 @@ async def summarize_study_material(request: SummaryRequest):
 
     aggregated = "\n\n".join(combined_text)
     combined_name = ", ".join(filenames)
-    res = gemini.generate_summary(aggregated, combined_name)
+    res = _generate_summary(gemini, aggregated, combined_name, language)
 
     return SummaryResponse(
         doc_id=None,

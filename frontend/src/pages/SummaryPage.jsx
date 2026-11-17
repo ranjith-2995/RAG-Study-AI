@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import ReactMarkdown from 'react-markdown';
-import { Sparkles, BookOpen, Layers, CheckCircle2, Copy, Check, Loader2, AlertCircle } from 'lucide-react';
+import { Sparkles, BookOpen, Layers, CheckCircle2, Copy, Check, Loader2, AlertCircle, Play, Pause, Square } from 'lucide-react';
 import api from '../services/api';
 
 export default function SummaryPage({ documents, preSelectedDocId }) {
@@ -9,6 +9,13 @@ export default function SummaryPage({ documents, preSelectedDocId }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [copied, setCopied] = useState(false);
+  const [summaryLanguage, setSummaryLanguage] = useState('English');
+  const [speechRate, setSpeechRate] = useState(1);
+  const [speechState, setSpeechState] = useState('stopped');
+
+  useEffect(() => () => {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+  }, []);
 
   useEffect(() => {
     if (preSelectedDocId) {
@@ -22,7 +29,7 @@ export default function SummaryPage({ documents, preSelectedDocId }) {
     setLoading(true);
     setError(null);
     try {
-      const res = await api.getSummary(docIdToUse || null);
+      const res = await api.getSummary(docIdToUse || null, summaryLanguage);
       setSummaryData(res);
     } catch (err) {
       console.error('Summary error:', err);
@@ -38,6 +45,40 @@ export default function SummaryPage({ documents, preSelectedDocId }) {
     navigator.clipboard.writeText(textToCopy);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSpeak = () => {
+    if (!summaryData || !('speechSynthesis' in window)) {
+      setError('Text-to-speech is not available in this browser.');
+      return;
+    }
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(
+      `${summaryData.summary}. Key topics: ${summaryData.key_topics?.join('. ')}. Study points: ${summaryData.study_points?.join('. ')}`
+    );
+    utterance.lang = summaryLanguage === 'Tamil' ? 'ta-IN' : 'en-US';
+    utterance.rate = speechRate;
+    utterance.onend = () => setSpeechState('stopped');
+    utterance.onerror = () => setSpeechState('stopped');
+    window.speechSynthesis.speak(utterance);
+    setSpeechState('playing');
+  };
+
+  const toggleSpeech = () => {
+    if (speechState === 'playing') {
+      window.speechSynthesis.pause();
+      setSpeechState('paused');
+    } else if (speechState === 'paused') {
+      window.speechSynthesis.resume();
+      setSpeechState('playing');
+    } else {
+      handleSpeak();
+    }
+  };
+
+  const stopSpeech = () => {
+    if ('speechSynthesis' in window) window.speechSynthesis.cancel();
+    setSpeechState('stopped');
   };
 
   if (documents.length === 0) {
@@ -63,10 +104,10 @@ export default function SummaryPage({ documents, preSelectedDocId }) {
         <div className="flex items-center gap-3 w-full sm:w-auto">
           <BookOpen className="h-5 w-5 text-indigo-600 shrink-0" />
           <div className="flex-1">
-            <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
-              Select Document to Summarize
-            </label>
-            <select
+              <label className="block text-[11px] font-semibold text-slate-500 uppercase tracking-wider mb-1">
+                Select Document to Summarize
+              </label>
+              <select
               value={selectedDocId}
               onChange={(e) => setSelectedDocId(e.target.value)}
               className="w-full text-xs bg-slate-50 border border-slate-200 rounded-lg px-3 py-2 font-medium text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
@@ -78,6 +119,19 @@ export default function SummaryPage({ documents, preSelectedDocId }) {
                 </option>
               ))}
             </select>
+            <label className="mt-2 block text-[11px] font-semibold text-slate-500 uppercase tracking-wider">
+              Summary language
+              <select value={summaryLanguage} onChange={(event) => {
+                if (summaryLanguage !== event.target.value) {
+                  setSummaryData(null);
+                  stopSpeech();
+                }
+                setSummaryLanguage(event.target.value);
+              }} className="mt-1 block w-full rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-medium text-slate-700">
+                <option>English</option>
+                <option>Tamil</option>
+              </select>
+            </label>
           </div>
         </div>
 
@@ -127,7 +181,7 @@ export default function SummaryPage({ documents, preSelectedDocId }) {
       {summaryData && !loading && (
         <div className="space-y-6">
           {/* Header Card */}
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex items-center justify-between">
+          <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-sm flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
             <div>
               <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 uppercase tracking-wider">
                 Study Guide Generated
@@ -136,22 +190,46 @@ export default function SummaryPage({ documents, preSelectedDocId }) {
                 {summaryData.filename || 'Comprehensive Notes Summary'}
               </h3>
             </div>
-            <button
-              onClick={handleCopy}
-              className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 px-3 py-1.5 rounded-lg border border-slate-200 transition-colors"
-            >
-              {copied ? (
-                <>
-                  <Check className="h-3.5 w-3.5 text-emerald-600" />
-                  <span className="text-emerald-600 font-medium">Copied!</span>
-                </>
-              ) : (
-                <>
-                  <Copy className="h-3.5 w-3.5" />
-                  <span>Copy Guide</span>
-                </>
-              )}
-            </button>
+            <div className="flex flex-wrap items-center gap-2">
+              <button
+                onClick={handleCopy}
+                className="flex items-center gap-1.5 text-xs text-slate-600 hover:text-indigo-600 bg-slate-50 hover:bg-indigo-50 px-3 py-1.5 rounded-lg border border-slate-200 transition-colors"
+              >
+                {copied ? (
+                  <>
+                    <Check className="h-3.5 w-3.5 text-emerald-600" />
+                    <span className="text-emerald-600 font-medium">Copied!</span>
+                  </>
+                ) : (
+                  <>
+                    <Copy className="h-3.5 w-3.5" />
+                    <span>Copy Guide</span>
+                  </>
+                )}
+              </button>
+              <span className="rounded-lg bg-slate-50 px-2 py-1.5 text-xs text-slate-600">{summaryLanguage === 'Tamil' ? 'தமிழ் voice' : 'English voice'}</span>
+              <label className="flex items-center gap-1 text-xs text-slate-500">
+                Speed
+                <select
+                  value={speechRate}
+                  onChange={(event) => setSpeechRate(Number(event.target.value))}
+                  className="rounded-lg border border-slate-200 bg-slate-50 px-2 py-1.5"
+                  aria-label="Speech speed"
+                >
+                  <option value={0.75}>0.75×</option>
+                  <option value={1}>1×</option>
+                  <option value={1.25}>1.25×</option>
+                  <option value={1.5}>1.5×</option>
+                </select>
+              </label>
+              <button onClick={toggleSpeech} className="flex items-center gap-1 rounded-lg bg-indigo-50 px-2.5 py-1.5 text-xs font-medium text-indigo-700 hover:bg-indigo-100">
+                {speechState === 'playing' ? <Pause className="h-3.5 w-3.5" /> : <Play className="h-3.5 w-3.5" />}
+                {speechState === 'paused' ? 'Resume' : speechState === 'playing' ? 'Pause' : 'Play'}
+              </button>
+              <button onClick={stopSpeech} className="flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs text-slate-600 hover:bg-slate-50">
+                <Square className="h-3 w-3" /> Stop
+              </button>
+            </div>
           </div>
 
           {/* Key Topics Badges */}

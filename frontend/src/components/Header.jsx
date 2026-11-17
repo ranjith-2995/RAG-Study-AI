@@ -1,18 +1,27 @@
 import React from 'react';
-import { UploadCloud, CheckCircle2, AlertCircle, ShieldCheck } from 'lucide-react';
+import { UploadCloud, Moon, Sun } from 'lucide-react';
 
-export default function Header({ title, subtitle, health, onOpenUpload }) {
+export default function Header({ title, subtitle, health, onOpenUpload, darkMode, onToggleDarkMode }) {
   const isHealthy = health?.status === 'healthy';
   const hasGemini = health?.gemini_configured;
 
   return (
-    <header className="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
+    <header className="app-header bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between sticky top-0 z-10 shadow-sm">
       <div>
         <h2 className="text-xl font-bold text-slate-800 tracking-tight">{title}</h2>
         <p className="text-xs text-slate-500 mt-0.5">{subtitle}</p>
       </div>
 
       <div className="flex items-center gap-4">
+        <button
+          type="button"
+          onClick={onToggleDarkMode}
+          className="p-2 rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-100"
+          aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+          title={darkMode ? 'Light mode' : 'Dark mode'}
+        >
+          {darkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        </button>
         {/* Gemini Status indicator */}
         <div className="flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium border bg-slate-50">
           <span className="relative flex h-2 w-2">

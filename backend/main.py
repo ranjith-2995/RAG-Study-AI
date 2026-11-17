@@ -22,6 +22,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 from backend.routes.documents import router as documents_router
 from backend.routes.chat import router as chat_router
 from backend.routes.summary import router as summary_router
+from backend.routes.learning import router as learning_router
 from backend.models.schemas import StatsResponse
 from backend.services.storage_service import get_all_documents
 from backend.rag.vectorstore import FAISSVectorStoreManager
@@ -73,6 +74,7 @@ app.add_middleware(
 app.include_router(documents_router)
 app.include_router(chat_router)
 app.include_router(summary_router)
+app.include_router(learning_router)
 
 
 @app.get("/")
@@ -92,6 +94,12 @@ async def health_check():
         "status": "healthy",
         "gemini_configured": gemini.is_configured()
     }
+
+
+@app.post("/api/health/gemini")
+async def verify_gemini_connection():
+    """Make a small Gemini request to verify the configured API key and model."""
+    return GeminiService.get_instance().verify_connection()
 
 
 @app.get("/api/stats", response_model=StatsResponse)

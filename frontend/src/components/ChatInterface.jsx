@@ -14,21 +14,44 @@ import {
   Loader2, 
   AlertCircle,
   HelpCircle,
-  Sparkles
+  Sparkles,
+  Globe2
 } from 'lucide-react';
 import api from '../services/api';
 
+const HISTORY_KEY = 'study-mate-chat-v1';
+const welcomeMessage = {
+  id: 'welcome',
+  role: 'assistant',
+  content: "👋 Hello! I'm **STUDY MATE AI**, your intelligent study notes assistant. Upload your PDF notes or textbook chapters, and ask me any questions. I'll provide accurate answers retrieved directly from your study documents, complete with page citations!",
+  sources: [],
+  timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+};
+
+function readChatHistory() {
+  try {
+    const saved = JSON.parse(localStorage.getItem(HISTORY_KEY) || 'null');
+    return Array.isArray(saved) && saved.length ? saved : [welcomeMessage];
+  } catch {
+    return [welcomeMessage];
+  }
+}
+
+function HighlightedSnippet({ text, query }) {
+  const terms = query.split(/\s+/).filter((term) => term.length > 2).slice(0, 6);
+  if (!terms.length) return text;
+  const expression = new RegExp(`(${terms.map((term) => term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|')})`, 'ig');
+  return text.split(expression).map((part, index) => (
+    terms.some((term) => part.toLowerCase() === term.toLowerCase())
+      ? <mark key={index} className="rounded bg-amber-200 px-0.5 text-slate-900">{part}</mark>
+      : part
+  ));
+}
+
 export default function ChatInterface({ documents, selectedDocId, onSelectDocId }) {
-  const [messages, setMessages] = useState([
-    {
-      id: 'welcome',
-      role: 'assistant',
-      content: "👋 Hello! I'm **STUDY MATE AI**, your intelligent study notes assistant. Upload your PDF notes or textbook chapters, and ask me any questions. I'll provide accurate answers retrieved directly from your study documents, complete with page citations!",
-      sources: [],
-      timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-    }
-  ]);
+  const [messages, setMessages] = useState(readChatHistory);
   const [inputQuery, setInputQuery] = useState('');
+  const [language, setLanguage] = useState('English');
   const [loading, setLoading] = useState(false);
   const [copiedId, setCopiedId] = useState(null);
   const [expandedSources, setExpandedSources] = useState({});
@@ -41,6 +64,10 @@ export default function ChatInterface({ documents, selectedDocId, onSelectDocId 
   useEffect(() => {
     scrollToBottom();
   }, [messages, loading]);
+
+  useEffect(() => {
+    localStorage.setItem(HISTORY_KEY, JSON.stringify(messages.slice(-100)));
+  }, [messages]);
 
   const handleSend = async (questionText = inputQuery) => {
     const q = questionText.trim();
@@ -58,7 +85,11 @@ export default function ChatInterface({ documents, selectedDocId, onSelectDocId 
     setLoading(true);
 
     try {
-      const response = await api.askQuestion(q, selectedDocId);
+      const history = messages
+        .filter((message) => message.id !== 'welcome' && message.id !== 'welcome-reset')
+        .map(({ role, content }) => ({ role, content }))
+        .slice(-8);
+      const response = await api.askQuestion(q, selectedDocId, history, language);
       
       const assistantMsg = {
         id: String(Date.now() + 1),
@@ -66,6 +97,7 @@ export default function ChatInterface({ documents, selectedDocId, onSelectDocId 
         content: response.answer,
         sources: response.sources || [],
         found_in_docs: response.found_in_docs,
+        sourceQuestion: q,
         timestamp: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       };
 
@@ -145,6 +177,18 @@ export default function ChatInterface({ documents, selectedDocId, onSelectDocId 
               </option>
             ))}
           </select>
+          <label className="ml-2 flex items-center gap-1.5 text-xs text-slate-600">
+            <Globe2 className="h-3.5 w-3.5 text-indigo-600" />
+            <select
+              value={language}
+              onChange={(event) => setLanguage(event.target.value)}
+              className="rounded-lg border border-slate-300 bg-white px-2 py-1.5"
+              aria-label="Answer language"
+            >
+              <option>English</option>
+              <option>Tamil</option>
+            </select>
+          </label>
         </div>
 
         <button
@@ -248,9 +292,15 @@ export default function ChatInterface({ documents, selectedDocId, onSelectDocId 
                                 Page {src.page}
                               </span>
                             </div>
-                            <p className="text-slate-600 italic font-serif text-[11px] leading-relaxed bg-white p-2 rounded border border-slate-100">
-                              "{src.snippet}"
-                            </p>
+                            <a
+                              href={api.getDocumentFileUrl(src.doc_id, src.page)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="block text-slate-600 italic font-serif text-[11px] leading-relaxed bg-white p-2 rounded border border-slate-100 hover:border-blue-300"
+                              title="Open cited PDF page"
+                            >
+                              “<HighlightedSnippet text={src.snippet} query={msg.sourceQuestion || ''} />”
+                            </a>
                           </div>
                         ))}
                       </div>

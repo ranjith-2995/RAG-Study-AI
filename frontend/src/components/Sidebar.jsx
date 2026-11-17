@@ -6,7 +6,12 @@ import {
   Sparkles, 
   LayoutDashboard,
   BrainCircuit,
-  GraduationCap
+  GraduationCap,
+  ClipboardList,
+  Layers3,
+  Waypoints,
+  CalendarDays,
+  ChartNoAxesCombined
 } from 'lucide-react';
 
 export default function Sidebar({ activeTab, setActiveTab, stats }) {
@@ -15,10 +20,15 @@ export default function Sidebar({ activeTab, setActiveTab, stats }) {
     { id: 'chat', label: 'AI Chat Assistant', icon: MessageSquare },
     { id: 'documents', label: 'Study Materials', icon: FileText, badge: stats?.total_documents },
     { id: 'summary', label: 'AI Summaries', icon: Sparkles },
+    { id: 'quiz', label: 'AI Quizzes', icon: ClipboardList },
+    { id: 'flashcards', label: 'Flashcards', icon: Layers3 },
+    { id: 'mindmap', label: 'Mind Maps', icon: Waypoints },
+    { id: 'planner', label: 'Study Planner', icon: CalendarDays },
+    { id: 'analytics', label: 'Analytics', icon: ChartNoAxesCombined },
   ];
 
   return (
-    <aside className="w-64 bg-slate-900 text-white flex flex-col shrink-0 min-h-screen border-r border-slate-800">
+    <aside className="app-sidebar w-64 bg-slate-900 text-white flex flex-col shrink-0 min-h-screen border-r border-slate-800">
       {/* Brand Header */}
       <div className="p-5 border-b border-slate-800 flex items-center gap-3">
         <div className="h-10 w-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center shadow-lg shadow-blue-500/20">

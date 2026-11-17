@@ -26,10 +26,16 @@ class SourceCitation(BaseModel):
     snippet: str
     score: Optional[float] = None
 
+class ChatTurn(BaseModel):
+    role: str
+    content: str
+
 class ChatRequest(BaseModel):
     question: str
     selected_doc_id: Optional[str] = None
     session_id: Optional[str] = None
+    language: str = "English"
+    history: List[ChatTurn] = Field(default_factory=list)
 
 class ChatResponse(BaseModel):
     question: str
@@ -39,6 +45,7 @@ class ChatResponse(BaseModel):
 
 class SummaryRequest(BaseModel):
     doc_id: Optional[str] = None
+    language: str = "English"
 
 class SummaryResponse(BaseModel):
     doc_id: Optional[str] = None
@@ -57,4 +64,32 @@ class StatsResponse(BaseModel):
 class DeleteResponse(BaseModel):
     message: str
     doc_id: str
+
+class QuizGenerateRequest(BaseModel):
+    doc_id: str
+    difficulty: str = "Medium"
+    count: int = Field(default=5, ge=1, le=10)
+
+class QuizSubmitRequest(BaseModel):
+    answers: dict[str, int]
+
+class FlashcardGenerateRequest(BaseModel):
+    doc_id: str
+    count: int = Field(default=8, ge=1, le=20)
+
+class FlashcardRatingRequest(BaseModel):
+    rating: str
+
+class MindMapRequest(BaseModel):
+    doc_id: str
+
+class PlannerGenerateRequest(BaseModel):
+    doc_id: str
+    goal: str = Field(min_length=1, max_length=300)
+
+class PlannerTopicUpdateRequest(BaseModel):
+    completed: bool
+
+class StudyTimeRequest(BaseModel):
+    seconds: int = Field(ge=1, le=86400)
 

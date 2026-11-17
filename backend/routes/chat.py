@@ -20,7 +20,9 @@ async def chat_with_docs(request: ChatRequest):
     pipeline = RAGPipeline.get_instance()
     result = pipeline.answer_question(
         question=request.question,
-        selected_doc_id=request.selected_doc_id
+        selected_doc_id=request.selected_doc_id,
+        conversation_history=[turn.model_dump() for turn in request.history],
+        language=request.language,
     )
 
     return ChatResponse(

@@ -5,11 +5,13 @@ import Dashboard from './pages/Dashboard';
 import ChatPage from './pages/ChatPage';
 import DocumentsPage from './pages/DocumentsPage';
 import SummaryPage from './pages/SummaryPage';
+import LearningPage from './pages/LearningPage';
 import FileUpload from './components/FileUpload';
 import api from './services/api';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState('dashboard');
+  const [darkMode, setDarkMode] = useState(() => localStorage.getItem('study-mate-dark-mode') === 'true');
   const [documents, setDocuments] = useState([]);
   const [stats, setStats] = useState(null);
   const [health, setHealth] = useState(null);
@@ -34,6 +36,25 @@ export default function App() {
 
   useEffect(() => {
     fetchAllData();
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem('study-mate-dark-mode', String(darkMode));
+  }, [darkMode]);
+
+  useEffect(() => {
+    let lastTick = Date.now();
+    const timer = window.setInterval(() => {
+      const now = Date.now();
+      if (document.visibilityState === 'visible') {
+        const activeSeconds = Math.floor((now - lastTick) / 1000);
+        if (activeSeconds > 0) {
+          api.recordStudyTime(activeSeconds).catch((error) => console.error('Could not record study time:', error));
+        }
+      }
+      lastTick = now;
+    }, 60000);
+    return () => window.clearInterval(timer);
   }, []);
 
   const handleNavigateToChat = (docId = null) => {
@@ -81,6 +102,16 @@ export default function App() {
           title: 'AI Study Summaries',
           subtitle: 'High-yield overviews, key concepts, and exam review points.',
         };
+      case 'quiz':
+        return { title: 'AI Quiz Generator', subtitle: 'Practice with document-grounded questions and review explanations.' };
+      case 'flashcards':
+        return { title: 'Smart Flashcards', subtitle: 'Review saved cards generated from your PDF materials.' };
+      case 'mindmap':
+        return { title: 'AI Mind Maps', subtitle: 'Explore topics and relationships extracted from your documents.' };
+      case 'planner':
+        return { title: 'AI Study Planner', subtitle: 'Build a revision plan and track completed topics.' };
+      case 'analytics':
+        return { title: 'Learning Analytics', subtitle: 'Track quiz performance, revision progress, and study time.' };
       default:
         return { title: 'Study Mate AI', subtitle: 'Intelligent Study Notes Assistant' };
     }
@@ -89,7 +120,7 @@ export default function App() {
   const headerInfo = getPageHeader();
 
   return (
-    <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
+    <div className={`app-shell flex h-screen overflow-hidden font-sans ${darkMode ? 'dark-mode' : ''}`}>
       {/* Sidebar Navigation */}
       <Sidebar
         activeTab={activeTab}
@@ -104,6 +135,8 @@ export default function App() {
           subtitle={headerInfo.subtitle}
           health={health}
           onOpenUpload={() => setShowUploadModal(true)}
+          darkMode={darkMode}
+          onToggleDarkMode={() => setDarkMode((value) => !value)}
         />
 
         <main className="flex-1 overflow-y-auto p-6 md:p-8">
@@ -142,6 +175,13 @@ export default function App() {
               <SummaryPage
                 documents={documents}
                 preSelectedDocId={selectedDocId}
+              />
+            )}
+            {['quiz', 'flashcards', 'mindmap', 'planner', 'analytics'].includes(activeTab) && (
+              <LearningPage
+                feature={activeTab}
+                onNavigate={setActiveTab}
+                documents={documents}
               />
             )}
           </div>

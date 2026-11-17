@@ -23,7 +23,13 @@ class RAGPipeline:
             cls._instance = cls()
         return cls._instance
 
-    def answer_question(self, question: str, selected_doc_id: Optional[str] = None) -> Dict[str, Any]:
+    def answer_question(
+        self,
+        question: str,
+        selected_doc_id: Optional[str] = None,
+        conversation_history: Optional[List[Dict[str, str]]] = None,
+        language: str = "English",
+    ) -> Dict[str, Any]:
         """
         Executes the full RAG cycle:
         1. Query Vector Search in FAISS
@@ -56,8 +62,14 @@ class RAGPipeline:
             }
 
         # 1 & 2: Similarity search in FAISS
+        prior_user_context = " ".join(
+            turn.get("content", "")[:300]
+            for turn in (conversation_history or [])[-4:]
+            if turn.get("role") == "user"
+        )
+        search_query = f"{prior_user_context} {clean_question}".strip()
         search_results = self.vector_manager.search(
-            query=clean_question,
+            query=search_query,
             top_k=self.top_k,
             doc_id=selected_doc_id
         )
@@ -106,7 +118,9 @@ class RAGPipeline:
         # 4: Pass context to Gemini
         llm_response = self.gemini_service.generate_rag_answer(
             question=clean_question,
-            retrieved_chunks=retrieved_chunks
+            retrieved_chunks=retrieved_chunks,
+            conversation_history=conversation_history,
+            language=language if language in {"English", "Tamil"} else "English",
         )
 
         return {
